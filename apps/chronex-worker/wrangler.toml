@@ -1,0 +1,23 @@
+name = "chronex-queue-worker"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Queue consumer binding
+[[queues.consumers]]
+queue = "chronex-platform-jobs"   # Replace with your actual queue name
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 3
+dead_letter_queue = "chronex-dlq" # Optional: for failed messages
+
+# Environment variables (set via `wrangler secret put`)
+# CLOUDFLARE_ACCOUNT_ID
+# CLOUDFLARE_API_TOKEN
+
+[vars]
+ENVIRONMENT = "production"
+
+[observability]
+[observability.logs]
+enabled = true
+invocation_logs = true

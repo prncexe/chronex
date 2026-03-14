@@ -43,17 +43,32 @@ type AuthToken = Awaited<ReturnType<typeof getAuthToken>>;
 const DISCORD_API = "https://discord.com/api/v10";
 
 
+async function fetchAvatarAsDataURI(avatarUrl: string): Promise<string> {
+  const res = await fetch(avatarUrl);
+  if (!res.ok) throw new Error(`Failed to fetch avatar: ${res.statusText}`);
+
+  const contentType = res.headers.get("content-type") ?? "image/png";
+  const buffer = await res.arrayBuffer();
+  const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+
+  return `data:${contentType};base64,${base64}`;
+}
+
 async function createWebhook(
   botToken: string,
   channelId: string,
+  name: string,
+  avatarUrl?: string,
 ): Promise<{ webhookUrl: string; webhookId: string; webhookToken: string }> {
+  const avatar = avatarUrl ? await fetchAvatarAsDataURI(avatarUrl) : undefined;
+
   const res = await fetch(`${DISCORD_API}/channels/${channelId}/webhooks`, {
     method: "POST",
     headers: {
       Authorization: `Bot ${botToken}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ name: "Chronex" }),
+    body: JSON.stringify({ name, avatar }),
   });
 
   if (!res.ok) {
@@ -207,7 +222,7 @@ export const DiscordMessage = async (
     await markProcessing(db, payload.platformPostId);
     const token = await getAuthToken(db, payload.workspaceId, "discord");
 
-    const webhook = await createWebhook(env.DISCORD_BOT_TOKEN, data.channelId);
+    const webhook = await createWebhook(env.DISCORD_BOT_TOKEN, data.channelId,env.DISCORD_WEBHOOK_NAME,env.DISCORD_WEBHOOK_AVATAR_URL);
     webhookId = webhook.webhookId;
     webhookToken = webhook.webhookToken;
 
@@ -242,7 +257,7 @@ export const DiscordEmbed = async (
     await markProcessing(db, payload.platformPostId);
     const token = await getAuthToken(db, payload.workspaceId, "discord");
 
-    const webhook = await createWebhook(env.DISCORD_BOT_TOKEN, data.channelId);
+    const webhook = await createWebhook(env.DISCORD_BOT_TOKEN, data.channelId,env.DISCORD_WEBHOOK_NAME,env.DISCORD_WEBHOOK_AVATAR_URL);
     webhookId = webhook.webhookId;
     webhookToken = webhook.webhookToken;
 
@@ -280,7 +295,7 @@ export const DiscordFile = async (
   try {
     await markProcessing(db, payload.platformPostId);
     const token = await getAuthToken(db, payload.workspaceId, "discord");
-    const webhook = await createWebhook(env.DISCORD_BOT_TOKEN, data.channelId);
+    const webhook = await createWebhook(env.DISCORD_BOT_TOKEN, data.channelId,env.DISCORD_WEBHOOK_NAME,env.DISCORD_WEBHOOK_AVATAR_URL);
     webhookId = webhook.webhookId;
     webhookToken = webhook.webhookToken;
 

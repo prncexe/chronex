@@ -9,7 +9,6 @@ import {
   lte,
   inArray,
 } from "@repo/db";
-import { markFailed, updatePostStatus } from "./utils/updatePostStatus";
 
 
 
@@ -30,6 +29,9 @@ export interface Env {
   DATABASE_URL: string;
   DISCORD_BOT_TOKEN: string;
   CHRONEX_QUEUE_PRODUCER: Queue;
+  DISCORD_WEBHOOK_NAME: string;
+  DISCORD_WEBHOOK_AVATAR_URL: string;
+
 }
 
 

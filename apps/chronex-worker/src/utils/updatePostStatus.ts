@@ -2,9 +2,6 @@ import { DB, platformPosts, eq } from "@repo/db";
 
 type PlatformPostStatus = "pending" | "processing" | "published" | "failed";
 
-/**
- * Update the status of a platform post row.
- */
 export async function updatePlatformPostStatus(
   db: DB,
   platformPostId: number,
@@ -29,32 +26,28 @@ export async function updatePlatformPostStatus(
     .where(eq(platformPosts.id, platformPostId));
 }
 
-/**
- * Mark a platform post as "processing".
- */
+
 export async function markProcessing(db: DB, platformPostId: number) {
   return updatePlatformPostStatus(db, platformPostId, "processing");
 }
 
-/**
- * Mark a platform post as "published" with the external ID from the platform.
- */
+
 export async function markPublished(
   db: DB,
   platformPostId: number,
   externalId: string,
+  postUrl: string
 
 ) {
 
   return updatePlatformPostStatus(db, platformPostId, "published", {
     externalId,
     publishedAt: new Date(),
+    postUrl,
   });
 }
 
-/**
- * Mark a platform post as "failed" with an error message.
- */
+
 export async function markFailed(
   db: DB,
   platformPostId: number,

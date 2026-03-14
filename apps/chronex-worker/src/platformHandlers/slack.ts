@@ -7,19 +7,16 @@ import {
 import { fetchMediaMany } from "../utils/media";
 import type { Env, PlatformJobPayload } from "../index";
 
-
-
 export interface SlackMetadata {
   caption: string;
   fileIds: number[];
   type: "message" | "file";
   channelId?: string;
+  workspaceName?: string;
 }
 
 type AuthToken = Awaited<ReturnType<typeof getAuthToken>>;
 const SLACK_API = "https://slack.com/api";
-
-
 
 async function postMessage(
   token: AuthToken,
@@ -32,10 +29,7 @@ async function postMessage(
       "Content-Type": "application/json; charset=utf-8",
       Authorization: `Bearer ${token.accessToken}`,
     },
-    body: JSON.stringify({
-      channel: channelId,
-      text,
-    }),
+    body: JSON.stringify({ channel: channelId, text }),
   });
 
   if (!res.ok) {
@@ -61,9 +55,7 @@ async function uploadFile(
   channelId: string,
   fileName: string,
   mediaUrl: string,
-  initialComment?: string,
 ): Promise<string> {
-  
   const mediaRes = await fetch(mediaUrl);
   if (!mediaRes.ok) {
     throw new Error(
@@ -80,7 +72,6 @@ async function uploadFile(
     throw new Error(`Could not determine file size for ${fileName}`);
   }
 
-  
   const getUrlBody = new URLSearchParams({
     filename: fileName,
     length: String(fileSize),
@@ -113,8 +104,6 @@ async function uploadFile(
     );
   }
 
-  
-  
   const uploadRes = await fetch(urlData.upload_url, {
     method: "POST",
     headers: {
@@ -129,11 +118,9 @@ async function uploadFile(
     throw new Error(`Slack file upload failed: ${err}`);
   }
 
-  
   const completeBody = new URLSearchParams({
     files: JSON.stringify([{ id: urlData.file_id, title: fileName }]),
     channel_id: channelId,
-    ...(initialComment ? { initial_comment: initialComment } : {}),
   });
 
   const completeRes = await fetch(`${SLACK_API}/files.completeUploadExternal`, {
@@ -162,21 +149,19 @@ async function uploadFile(
     );
   }
 
-  return completeData.files?.[0]?.id ?? urlData.file_id;
+  const file = completeData.files?.[0];
+  if (!file) {
+    throw new Error("Slack files.completeUploadExternal returned no file");
+  }
+
+  return file.id;
 }
-
-
 
 export const SlackMessage = async (
   payload: PlatformJobPayload,
   env: Env,
 ): Promise<void> => {
   const db = (await import("@repo/db")).createDb(env.DATABASE_URL);
-
- 
-
-  
-
   const data = payload.metadata as SlackMetadata;
 
   try {
@@ -190,7 +175,12 @@ export const SlackMessage = async (
     }
 
     const ts = await postMessage(token, channelId, data.caption);
-    await markPublished(db, payload.platformPostId, ts);
+    await markPublished(
+      db,
+      payload.platformPostId,
+      ts,
+      `https://${data.workspaceName}.slack.com/archives/${channelId}/p${ts.replace(".", "")}`,
+    );
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     await markFailed(db, payload.platformPostId, msg);
@@ -203,11 +193,6 @@ export const SlackFile = async (
   env: Env,
 ): Promise<void> => {
   const db = (await import("@repo/db")).createDb(env.DATABASE_URL);
-
- 
-
-  
-
   const data = payload.metadata as SlackMetadata;
 
   try {
@@ -216,32 +201,28 @@ export const SlackFile = async (
     const token = await getAuthToken(db, payload.workspaceId, "slack");
     const channelId = data.channelId ?? token.profileId ?? "";
 
-    if (!channelId) {
-      throw new Error("No Slack channel ID specified");
-    }
+    if (!channelId) throw new Error("No Slack channel ID specified");
+    if (!data.workspaceName) throw new Error("No Slack workspace name specified");
 
+    // Post caption first to get a real ts
+    const ts = await postMessage(token, channelId, data.caption);
+
+    // Upload files into the same channel
     const mediaItems = await fetchMediaMany(db, data.fileIds);
-    const uploadedFileIds: string[] = [];
-
     for (let i = 0; i < mediaItems.length; i++) {
       const item = mediaItems[i]!;
       const urlPath = new URL(item.url).pathname;
-
       const fileName =
         urlPath.split("/").pop() || `file_${i}.${item.extension ?? "bin"}`;
-
-      const fileId = await uploadFile(
-        token,
-        channelId,
-        fileName,
-        item.url,
-        i === 0 ? data.caption : undefined,
-      );
-
-      uploadedFileIds.push(fileId);
+      await uploadFile(token, channelId, fileName, item.url);
     }
 
-    await markPublished(db, payload.platformPostId, uploadedFileIds[0] ?? "");
+    await markPublished(
+      db,
+      payload.platformPostId,
+      ts,
+      `https://${data.workspaceName}.slack.com/archives/${channelId}/p${ts.replace(".", "")}`,
+    );
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     await markFailed(db, payload.platformPostId, msg);

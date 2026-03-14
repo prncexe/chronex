@@ -240,7 +240,7 @@ export const LinkedInText = async (
       lifecycleState: "PUBLISHED",
     });
 
-    await markPublished(db, payload.platformPostId, postUrn);
+    await markPublished(db, payload.platformPostId, postUrn, `https://www.linkedin.com/feed/update/${postUrn}`);
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     await markFailed(db, payload.platformPostId, msg);
@@ -289,7 +289,7 @@ export const LinkedInImage = async (
       lifecycleState: "PUBLISHED",
     });
 
-    await markPublished(db, payload.platformPostId, postUrn);
+    await markPublished(db, payload.platformPostId, postUrn, `https://www.linkedin.com/feed/update/${postUrn}`);
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     await markFailed(db, payload.platformPostId, msg);
@@ -397,7 +397,7 @@ await finalizeVideoUpload(token, videoUrn, uploadToken,  etag ? [etag] : []);
       videoUrn,
     });
 
-    await markPublished(db, payload.platformPostId, postUrn);
+    await markPublished(db, payload.platformPostId, postUrn, `https://www.linkedin.com/feed/update/${postUrn}`);
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error("[LinkedInVideo] failed", {
@@ -457,7 +457,7 @@ export const LinkedInMultiPost = async (
       lifecycleState: "PUBLISHED",
     });
 
-    await markPublished(db, payload.platformPostId, postUrn);
+    await markPublished(db, payload.platformPostId, postUrn, `https://www.linkedin.com/feed/update/${postUrn}`);
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     await markFailed(db, payload.platformPostId, msg);

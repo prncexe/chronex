@@ -125,6 +125,7 @@ export const createPost = workspaceProcedure
             fileIds: "fileIds" in p ? p.fileIds : null,
             channelId: "channelId" in p ? p.channelId : null,
             embed: "embed" in p ? p.embed : null,
+            workspaceName: "workspaceName" in p ? p.workspaceName : null,
           },
           status: "pending" as const,
           scheduledAt: input.scheduledAt,

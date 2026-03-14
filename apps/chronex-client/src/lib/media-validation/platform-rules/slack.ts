@@ -14,6 +14,7 @@ export const message = z.object({
   caption: captionMax4000,
   type: z.literal("message"),
   channelId: z.string(),
+  workspaceName:z.string(),
 });
 
 
@@ -23,6 +24,7 @@ export const file = z.object({
   fileIds: multipleFileIds,
   type: z.literal("file"),
   channelId: z.string(),
+  workspaceName:z.string(),
 });
 
 

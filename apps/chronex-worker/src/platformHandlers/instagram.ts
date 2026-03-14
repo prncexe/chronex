@@ -1,7 +1,7 @@
 import { getAuthToken } from "../utils/getAuthToken";
 import {
   markProcessing,
-  markPublishedIGTH,
+  markPublished,
   markFailed,
 } from "../utils/updatePostStatus";
 import { fetchMedia, fetchMediaMany } from "../utils/media";
@@ -44,9 +44,7 @@ function publishUrl(profileId: string) {
   return `${IG_API}/${profileId}/media_publish`;
 }
 
-/**
- * Create a media container on Instagram.
- */
+
 async function createContainer(
   token: AuthToken,
   body: Record<string, unknown>,
@@ -68,9 +66,7 @@ async function createContainer(
   return res.json() as Promise<ContainerResponse>;
 }
 
-/**
- * Publish a previously created media container (or carousel).
- */
+
 async function publishContainer(
   token: AuthToken,
   creationId: string,
@@ -92,10 +88,7 @@ async function publishContainer(
   return res.json() as Promise<PublishResponse>;
 }
 
-/**
- * Check if a container has finished processing.
- * Returns the status_code string.
- */
+
 async function checkContainerStatus(
   token: AuthToken,
   containerId: string,
@@ -104,14 +97,10 @@ async function checkContainerStatus(
     `${IG_API}/${containerId}?fields=status_code,status&access_token=${token.accessToken}`,
   );
   const data = (await res.json()) as ContainerStatusResponse;
-  console.log("Checked IG container status:", JSON.stringify(data));
   return data.status_code;
 }
 
-/**
- * Re-enqueue a job with a delay so the queue picks it up later for status
- * checking. The `containerId` is carried in the payload so we can resume.
- */
+
 async function enqueueStatusCheck(
   env: Env,
   payload: PlatformJobPayload,
@@ -132,16 +121,11 @@ async function enqueueStatusCheck(
 
 
 
-/**
- * Publish a single IMAGE post to Instagram.
- * Uses signed URLs for media.
- */
 export const InstagramImage = async (
   payload: PlatformJobPayload,
   env: Env,
 ): Promise<void> => {
   const db = (await import("@repo/db")).createDb(env.DATABASE_URL);
-  console.log("dhappa bhen ke lode");
   try {
     const token = await getAuthToken(db, payload.workspaceId, "instagram");
 
@@ -151,7 +135,12 @@ export const InstagramImage = async (
 
       if (status === "FINISHED") {
         const result = await publishContainer(token, payload.containerId);
-        await markPublishedIGTH(db, payload.platformPostId, result.id,token.accessToken,IG_API);
+          const response = await fetch(
+  `${IG_API}/${result.id}?fields=permalink&access_token=${token.accessToken}`
+);
+const res:Record<any,string> = await response.json();
+
+        await markPublished(db, payload.platformPostId, result.id,res.permalink);
         return;
       }
 
@@ -191,15 +180,7 @@ export const InstagramImage = async (
   }
 };
 
-/**
- * Publish a REEL (video) to Instagram.
- *
- * Phase 1 ("create"):  create container → set processing → re-enqueue for status check
- * Phase 2 ("check_status"): check container status →
- *   - FINISHED → publish → mark published
- *   - IN_PROGRESS → re-enqueue again
- *   - ERROR → mark failed
- */
+
 export const InstagramReel = async (
   payload: PlatformJobPayload,
   env: Env,
@@ -217,7 +198,11 @@ export const InstagramReel = async (
 
       if (status === "FINISHED") {
         const result = await publishContainer(token, payload.containerId);
-        await markPublishedIGTH(db, payload.platformPostId, result.id,token.accessToken,IG_API);
+          const response = await fetch(
+  `${IG_API}/${result.id}?fields=permalink&access_token=${token.accessToken}`
+);
+const res:Record<any,string> = await response.json();
+        await markPublished(db, payload.platformPostId, result.id,res.permalink);
         return;
       }
 
@@ -258,7 +243,6 @@ export const InstagramCarousel = async (
   env: Env,
 ): Promise<void> => {
   const db = (await import("@repo/db")).createDb(env.DATABASE_URL);
-  console.log("ye raha aapka payload", payload);
  
   
 
@@ -305,8 +289,12 @@ export const InstagramCarousel = async (
           return;
         }
         const result = await publishContainer(token, payload.containerId);
-        await markPublishedIGTH(db, payload.platformPostId, result.id,token.accessToken,IG_API);
-        console.log("Carousel published with ID:", result.id);
+          const response = await fetch(
+  `${IG_API}/${result.id}?fields=permalink&access_token=${token.accessToken}`
+);
+const res:Record<any,string> = await response.json();
+        await markPublished(db, payload.platformPostId, result.id,res.permalink);
+
         return;
       }
       const carousel = await createContainer(token, {
@@ -324,10 +312,10 @@ export const InstagramCarousel = async (
     }
 
     await markProcessing(db, payload.platformPostId);
-    console.log("ye raha aapka data", data);
+
     const mediaItems = await fetchMediaMany(db, data.fileIds);
     const childIds: string[] = [];
-    console.log("Creating child containers for carousel items:", mediaItems);
+
     for (const item of mediaItems) {
       const isVideo = item.type === "video";
 
@@ -339,7 +327,7 @@ export const InstagramCarousel = async (
       });
 
       childIds.push(child.id);
-      console.log(`Created child container ${child.id} for media ${item}`);
+
     }
 
     await enqueueStatusCheck(env, payload, "", childIds);
@@ -356,8 +344,8 @@ export const InstagramStory = async (
   env: Env,
 ): Promise<void> => {
   const db = (await import("@repo/db")).createDb(env.DATABASE_URL);
-  console.log("ye raha aapka payload", payload);
- 
+
+  
   
   const data = payload.metadata as MetaDataSchema;
 
@@ -368,12 +356,15 @@ export const InstagramStory = async (
       const status = await checkContainerStatus(token, payload.containerId);
 
       if (status === "FINISHED") {
-        console.log(
-          "IG story container finished processing, now publishing...",
-        );
+       
+        
         const result = await publishContainer(token, payload.containerId);
-        await markPublishedIGTH(db, payload.platformPostId, result.id,token.accessToken,IG_API);
-        console.log("Story published with ID:", result.id);
+          const response = await fetch(
+  `${IG_API}/${result.id}?fields=permalink&access_token=${token.accessToken}`
+);
+const res:Record<any,string> = await response.json();
+        await markPublished(db, payload.platformPostId, result.id, res.permalink);
+
         return;
       }
 
@@ -387,9 +378,8 @@ export const InstagramStory = async (
         return;
       }
 
-      console.log(
-        "IG story container still processing, re-enqueueing for status check...",
-      );
+    
+      
       await enqueueStatusCheck(env, payload, payload.containerId);
       return;
     }
@@ -399,33 +389,23 @@ export const InstagramStory = async (
     const media = await fetchMedia(db, data.fileIds[0] ?? 0);
     const isVideo = media.type === "video";
 
-    console.log(
-      "IG Story media URL:",
-      media.url,
-      "type:",
-      media.type,
-      "extension:",
-      media.extension,
-    );
+ 
+    
     const probe = await fetch(media.url, { method: "HEAD" });
     if (!probe.ok) {
       throw new Error(
         `Media URL not accessible (HTTP ${probe.status}): ${media.url}`,
       );
     }
-    console.log(
-      "IG Story media probe OK, content-type:",
-      probe.headers.get("content-type"),
-      "content-length:",
-      probe.headers.get("content-length"),
-    );
+ 
+    
 
     const container = await createContainer(token, {
       ...(isVideo ? { video_url: media.url } : { image_url: media.url }),
       media_type: "STORIES",
     });
 
-    console.log("IG Story container created:", container.id);
+
     await enqueueStatusCheck(env, payload, container.id);
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);

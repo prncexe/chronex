@@ -205,6 +205,7 @@ export const DiscordMessage = async (
 
   try {
     await markProcessing(db, payload.platformPostId);
+    const token = await getAuthToken(db, payload.workspaceId, "discord");
 
     const webhook = await createWebhook(env.DISCORD_BOT_TOKEN, data.channelId);
     webhookId = webhook.webhookId;
@@ -213,8 +214,7 @@ export const DiscordMessage = async (
     const result = await executeWebhookJson(webhook.webhookUrl, {
       content: data.caption,
     });
-
-    await markPublished(db, payload.platformPostId, result.id);
+    await markPublished(db, payload.platformPostId, result.id, `https://discord.com/channels/${token.profileId}/${data.channelId}/${result.id}`);
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     await markFailed(db, payload.platformPostId, msg);
@@ -240,6 +240,7 @@ export const DiscordEmbed = async (
 
   try {
     await markProcessing(db, payload.platformPostId);
+    const token = await getAuthToken(db, payload.workspaceId, "discord");
 
     const webhook = await createWebhook(env.DISCORD_BOT_TOKEN, data.channelId);
     webhookId = webhook.webhookId;
@@ -252,7 +253,7 @@ export const DiscordEmbed = async (
       embeds: [embed],
     });
 
-    await markPublished(db, payload.platformPostId, result.id);
+    await markPublished(db, payload.platformPostId, result.id, `https://discord.com/channels/${token.profileId}/${data.channelId}/${result.id}`);
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     await markFailed(db, payload.platformPostId, msg);
@@ -278,7 +279,7 @@ export const DiscordFile = async (
 
   try {
     await markProcessing(db, payload.platformPostId);
-
+    const token = await getAuthToken(db, payload.workspaceId, "discord");
     const webhook = await createWebhook(env.DISCORD_BOT_TOKEN, data.channelId);
     webhookId = webhook.webhookId;
     webhookToken = webhook.webhookToken;
@@ -299,7 +300,7 @@ export const DiscordFile = async (
       files,
     );
 
-    await markPublished(db, payload.platformPostId, result.id);
+    await markPublished(db, payload.platformPostId, result.id, `https://discord.com/channels/${token.profileId}/${data.channelId}/${result.id}`);
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     await markFailed(db, payload.platformPostId, msg);

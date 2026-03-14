@@ -1,7 +1,7 @@
 import { getAuthToken } from "../utils/getAuthToken";
 import {
   markProcessing,
-  markPublishedIGTH,
+  markPublished,
   markFailed,
 } from "../utils/updatePostStatus";
 import { fetchMedia, fetchMediaMany } from "../utils/media";
@@ -140,7 +140,11 @@ export const ThreadsText = async (
     });
 
     const result = await publishContainer(token, container.id);
-    await markPublishedIGTH(db, payload.platformPostId, result.id,token.accessToken,THREADS_API);
+    const response = await fetch(
+      `${THREADS_API}/${result.id}?fields=permalink&access_token=${token.accessToken}`
+    );
+    const res: Record<any, string> = await response.json();
+    await markPublished(db, payload.platformPostId, result.id, res.permalink);
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     await markFailed(db, payload.platformPostId, msg);
@@ -175,7 +179,11 @@ export const ThreadsImage = async (
     });
 
     const result = await publishContainer(token, container.id);
-    await markPublishedIGTH(db, payload.platformPostId, result.id, token.accessToken, THREADS_API);
+    const response = await fetch(
+      `${THREADS_API}/${result.id}?fields=permalink&access_token=${token.accessToken}`
+    );
+    const res: Record<any, string> = await response.json();
+    await markPublished(db, payload.platformPostId, result.id, res.permalink);
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     await markFailed(db, payload.platformPostId, msg);
@@ -209,7 +217,11 @@ export const ThreadsVideo = async (
 
       if (status === "FINISHED") {
         const result = await publishContainer(token, payload.containerId);
-        await markPublishedIGTH(db, payload.platformPostId, result.id, token.accessToken, THREADS_API);
+        const response = await fetch(
+          `${THREADS_API}/${result.id}?fields=permalink&access_token=${token.accessToken}`
+        );
+        const res: Record<any, string> = await response.json();
+        await markPublished(db, payload.platformPostId, result.id, res.permalink);
         return;
       }
 
@@ -297,7 +309,11 @@ export const ThreadsCarousel = async (
 
       
       const result = await publishContainer(token, payload.containerId);
-      await markPublishedIGTH(db, payload.platformPostId, result.id,token.accessToken, THREADS_API);
+      const response = await fetch(
+        `${THREADS_API}/${result.id}?fields=permalink&access_token=${token.accessToken}`
+      );
+      const res: Record<any, string> = await response.json();
+      await markPublished(db, payload.platformPostId, result.id, res.permalink);
       return; 
     }
 

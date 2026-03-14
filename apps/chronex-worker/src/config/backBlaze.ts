@@ -24,9 +24,7 @@ interface B2DownloadAuthResponse {
   authorizationToken: string;
 }
 
-/**
- * Authenticates with Backblaze B2 and returns account-level credentials.
- */
+
 async function authorizeB2Account(): Promise<B2AuthResponse> {
   const credentials = Buffer.from(
     `${BACKBLAZE_CREDENTIALS.applicationKeyId}:${BACKBLAZE_CREDENTIALS.applicationKey}`,
@@ -50,23 +48,23 @@ async function authorizeB2Account(): Promise<B2AuthResponse> {
 }
 
 
-// function parseB2Url(rawUrl: string): { bucketName: string; filePath: string } {
-//   const url = new URL(rawUrl);
 
-//   // pathname = /file/<bucketName>/<filePath...>
-//   const parts = url.pathname.split("/").filter(Boolean);
 
-//   if (parts[0] !== "file" || parts.length < 3) {
-//     throw new Error(
-//       `Invalid Backblaze URL format. Expected: https://<host>/file/<bucket>/<path>, got: ${rawUrl}`,
-//     );
-//   }
 
-//   const bucketName = parts[1];
-//   const filePath = parts.slice(2).join("/");
 
-//   return { bucketName, filePath };
-// }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 async function getDownloadAuthorization(authToken: string, apiUrl: any, bucketId: string, fileNamePrefix: string, validDurationSeconds = 3600):Promise<B2DownloadAuthResponse> {
   const response = await fetch(
@@ -88,22 +86,22 @@ async function getDownloadAuthorization(authToken: string, apiUrl: any, bucketId
   if (!response.ok) {
     throw new Error(`Failed to get download auth: ${response.statusText}`);
   }
-  return response.json(); // contains authorizationToken
+  return response.json(); 
 }
 export async function getBackblazeSignedUrl(
   rawUrl: string,
   bucketId :string,
 ): Promise<string> {
  try {
-    // Authorize and get tokens
+    
     const { authorizationToken, apiInfo } = await authorizeB2Account();
     const downloadUrl = apiInfo.storageApi.downloadUrl;
 
-    // Extract file path from URL (e.g. /file/bucket-name/path/to/file.jpg)
+    
     const url = new URL(rawUrl);
-    const fileNamePrefix = url.pathname.replace(/^\/file\/[^/]+\//, ""); // strip /file/bucketName/
+    const fileNamePrefix = url.pathname.replace(/^\/file\/[^/]+\//, ""); 
 
-    // Get a download authorization token
+    
     const { authorizationToken: downloadToken } = await getDownloadAuthorization(
       authorizationToken,
       apiInfo.storageApi.apiUrl,
@@ -111,7 +109,7 @@ export async function getBackblazeSignedUrl(
       fileNamePrefix
     );
 
-    // Build the signed URL
+    
     const signedUrl = `${downloadUrl}${url.pathname}?Authorization=${encodeURIComponent(downloadToken)}`;
     return signedUrl;
 

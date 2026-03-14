@@ -9,7 +9,7 @@ export type Platform =
   | "threads"
   | "discord"
   | "slack"
-  | "youtube";
+
 
 export async function getAuthToken(
   db: DB,

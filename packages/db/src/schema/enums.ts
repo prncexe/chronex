@@ -4,6 +4,7 @@ import { pgEnum } from "drizzle-orm/pg-core";
 export const postStatusEnum = pgEnum("post_status", [
   "scheduled",
   "published",
+  "publishing",
   "failed",
 ]);
 
@@ -19,7 +20,6 @@ export const mediaTypeEnum = pgEnum("media_type", [ "image", "video"]);
 
 // Platform enum
 export const platformEnum = pgEnum("platform", [
-  "youtube",
   "linkedin",
   "instagram",
   "threads",

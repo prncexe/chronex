@@ -9,14 +9,14 @@ import {
   lte,
   inArray,
 } from "@repo/db";
-import { markFailed } from "./utils/updatePostStatus";
+import { markFailed, updatePostStatus } from "./utils/updatePostStatus";
 
 
 
 export interface PlatformJobPayload {
   postId: number;
   platformPostId: number;
-  platform: string;
+  platform: "instagram" | "linkedin" | "threads" | "discord" | "slack" ;
   workspaceId: number;
   scheduledAt: string;
   metadata?: unknown;
@@ -61,6 +61,7 @@ import {
 } from "./platformHandlers/discord";
 
 import { SlackMessage, SlackFile } from "./platformHandlers/slack";
+import { decideStatus } from "./decideStatus";
 
 
 type PostHandler = (payload: PlatformJobPayload, env: Env) => Promise<void>;
@@ -140,17 +141,10 @@ export default {
         );
 
         
-        try {
-          console.log("Updating platform post status to 'failed' in DB...");
-          const db = createDb(env.DATABASE_URL);
-          const msg = error instanceof Error ? error.message : String(error);
-          await markFailed(db, job.platformPostId, msg);
-        } catch (dbErr) {
-          console.error("Could not update platform post status:", dbErr);
-        }
-
-        
-        message.retry();
+ 
+      }
+      finally {
+        await decideStatus(createDb(env.DATABASE_URL), job.postId, job.platform);
       }
     }
   },

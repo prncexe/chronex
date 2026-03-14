@@ -1,6 +1,21 @@
-import { DB, platformPosts, eq } from "@repo/db";
+import { DB, platformPosts, eq, post } from "@repo/db";
 
 type PlatformPostStatus = "pending" | "processing" | "published" | "failed";
+
+export async function updatePostStatus(
+  db: DB,
+  postId: number,
+  status: "scheduled" |  "published" | "failed"|"publishing",
+) {
+  await db
+    .update(post)
+    .set({
+      status,
+      updatedAt: new Date(),
+    })
+    .where(eq(post.id, postId));
+}
+
 
 export async function updatePlatformPostStatus(
   db: DB,

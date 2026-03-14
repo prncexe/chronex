@@ -23,7 +23,7 @@ crons = ["0 */12 * * *"]
 
 [vars]
 ENVIRONMENT = "production"
-DATABASE_URL = "postgresql://postgres.lfisyxaoxxfjsrstdadm:iiW2pjm!i9sqV&Z@aws-1-us-east-2.pooler.supabase.com:6543/postgres"
+
 
 [observability]
 [observability.logs]

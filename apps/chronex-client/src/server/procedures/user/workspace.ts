@@ -1,29 +1,26 @@
-import { z } from "zod";
-import { authProcedure } from "@/server/trpc";
-import { NewWorkspace, Workspace } from "@repo/db";
-import { workspace } from "@repo/db";
+import { z } from 'zod'
+import { authProcedure } from '@/server/trpc'
+import { NewWorkspace, Workspace } from '@repo/db'
+import { workspace } from '@repo/db'
 export const createWorkspaceProcedure = authProcedure
   .input(
     z.object({
-      name: z.string().min(3, "Workspace name is required"),
+      name: z.string().min(3, 'Workspace name is required'),
     }),
   )
   .mutation(async ({ ctx, input }) => {
-    const { name } = input;
-    const userId = ctx.user.id;
+    const { name } = input
+    const userId = ctx.user.id
     // Create a new workspace in the database
     const values: NewWorkspace = {
       name,
       createdBy: userId,
-    };
-    const [newworkspace] = await ctx.db
-      .insert(workspace)
-      .values(values)
-      .returning();
-    if (!newworkspace) throw new Error("Insert failed");
+    }
+    const [newworkspace] = await ctx.db.insert(workspace).values(values).returning()
+    if (!newworkspace) throw new Error('Insert failed')
 
-    return newworkspace;
-  });
+    return newworkspace
+  })
 
 // export const getWorkspacesProcedure = authProcedure.query(async ({ ctx }) => {
 //   const userId = ctx.user.id;

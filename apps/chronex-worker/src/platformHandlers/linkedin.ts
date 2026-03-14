@@ -1,33 +1,24 @@
-import { getAuthToken } from "../utils/getAuthToken";
-import {
-  markProcessing,
-  markPublished,
-  markFailed,
-} from "../utils/updatePostStatus";
-import { fetchMedia, fetchMediaMany, streamMedia } from "../utils/media";
-import type { Env, PlatformJobPayload } from "../index";
-
-
+import { getAuthToken } from '../utils/getAuthToken'
+import { markProcessing, markPublished, markFailed } from '../utils/updatePostStatus'
+import { fetchMedia, fetchMediaMany, streamMedia } from '../utils/media'
+import type { Env, PlatformJobPayload } from '../index'
 
 export interface LinkedInMetadata {
-  caption: string;
-  fileIds: number[];
-  type: "text" | "image" | "video" | "MultiPost";
+  caption: string
+  fileIds: number[]
+  type: 'text' | 'image' | 'video' | 'MultiPost'
 }
 
-type AuthToken = Awaited<ReturnType<typeof getAuthToken>>;
+type AuthToken = Awaited<ReturnType<typeof getAuthToken>>
 
-
-const LI_API = "https://api.linkedin.com/rest";
-
-
+const LI_API = 'https://api.linkedin.com/rest'
 
 function authHeaders(token: AuthToken) {
   return {
     Authorization: `Bearer ${token.accessToken}`,
-    "LinkedIn-Version": "202602",
-    "X-Restli-Protocol-Version": "2.0.0",
-  };
+    'LinkedIn-Version': '202602',
+    'X-Restli-Protocol-Version': '2.0.0',
+  }
 }
 
 /**
@@ -39,32 +30,32 @@ function authHeaders(token: AuthToken) {
  */
 async function initImageUpload(token: AuthToken) {
   const res = await fetch(`${LI_API}/images?action=initializeUpload`, {
-    method: "POST",
+    method: 'POST',
     headers: {
       ...authHeaders(token),
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       initializeUploadRequest: {
         owner: `urn:li:person:${token.profileId}`,
       },
     }),
-  });
+  })
 
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`LinkedIn initImageUpload failed: ${err}`);
+    const err = await res.text()
+    throw new Error(`LinkedIn initImageUpload failed: ${err}`)
   }
 
   const data = (await res.json()) as {
-    value: { uploadUrl: string; image: string ,uploadToken: string};
-  };
+    value: { uploadUrl: string; image: string; uploadToken: string }
+  }
 
   return {
     uploadUrl: data.value.uploadUrl,
     imageUrn: data.value.image,
     uploadToken: data.value.uploadToken,
-  };
+  }
 }
 
 /**
@@ -76,10 +67,10 @@ async function initImageUpload(token: AuthToken) {
  */
 async function initVideoUpload(token: AuthToken, fileSizeBytes: number) {
   const res = await fetch(`${LI_API}/videos?action=initializeUpload`, {
-    method: "POST",
+    method: 'POST',
     headers: {
       ...authHeaders(token),
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       initializeUploadRequest: {
@@ -87,61 +78,58 @@ async function initVideoUpload(token: AuthToken, fileSizeBytes: number) {
         fileSizeBytes,
       },
     }),
-  });
+  })
 
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`LinkedIn initVideoUpload failed: ${err}`);
+    const err = await res.text()
+    throw new Error(`LinkedIn initVideoUpload failed: ${err}`)
   }
 
   const data = (await res.json()) as {
     value: {
-      uploadInstructions: Array<{ uploadUrl: string }>;
-      video: string;
-      uploadToken: string;
-    };
-  };
+      uploadInstructions: Array<{ uploadUrl: string }>
+      video: string
+      uploadToken: string
+    }
+  }
 
   return {
-    uploadUrl: data.value.uploadInstructions[0]?.uploadUrl ?? "",
+    uploadUrl: data.value.uploadInstructions[0]?.uploadUrl ?? '',
     videoUrn: data.value.video,
-    uploadToken: data.value.uploadToken ?? "",
-  };
+    uploadToken: data.value.uploadToken ?? '',
+  }
 }
-   
-
-
 
 async function uploadBinaryStream(
   uploadUrl: string,
   mediaUrl: string,
   token: AuthToken,
 ): Promise<string | null> {
-  const { body, contentType, contentLength } = await streamMedia(mediaUrl);
+  const { body, contentType, contentLength } = await streamMedia(mediaUrl)
 
   const headers: Record<string, string> = {
     Authorization: `Bearer ${token.accessToken}`,
-    "Content-Type": contentType,
-  };
+    'Content-Type': contentType,
+  }
   if (contentLength) {
-    headers["Content-Length"] = String(contentLength);
+    headers['Content-Length'] = String(contentLength)
   }
 
   const res = await fetch(uploadUrl, {
-    method: "PUT",
+    method: 'PUT',
     headers,
     body,
-        // @ts-expect-error — duplex required for streaming request body in fetch
+    // @ts-expect-error — duplex required for streaming request body in fetch
 
-    duplex: "half",
-  });
+    duplex: 'half',
+  })
 
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`LinkedIn binary upload failed: ${err}`);
+    const err = await res.text()
+    throw new Error(`LinkedIn binary upload failed: ${err}`)
   }
 
-  return res.headers.get("etag"); 
+  return res.headers.get('etag')
 }
 
 /**
@@ -157,13 +145,13 @@ async function finalizeVideoUpload(
   token: AuthToken,
   videoUrn: string,
   uploadToken: string,
-  uploadedPartIds: string[], 
+  uploadedPartIds: string[],
 ) {
   const res = await fetch(`${LI_API}/videos?action=finalizeUpload`, {
-    method: "POST",
+    method: 'POST',
     headers: {
       ...authHeaders(token),
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       finalizeUploadRequest: {
@@ -172,11 +160,11 @@ async function finalizeVideoUpload(
         uploadedPartIds,
       },
     }),
-  });
+  })
 
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`LinkedIn finalizeVideoUpload failed: ${err}`);
+    const err = await res.text()
+    throw new Error(`LinkedIn finalizeVideoUpload failed: ${err}`)
   }
 }
 
@@ -186,200 +174,170 @@ async function finalizeVideoUpload(
  * POST https://api.linkedin.com/rest/posts
  * Docs: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api
  */
-async function createPost(
-  token: AuthToken,
-  body: Record<string, unknown>,
-): Promise<string> {
+async function createPost(token: AuthToken, body: Record<string, unknown>): Promise<string> {
   const res = await fetch(`${LI_API}/posts`, {
-    method: "POST",
+    method: 'POST',
     headers: {
       ...authHeaders(token),
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
-  });
+  })
 
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`LinkedIn createPost failed: ${err}`);
+    const err = await res.text()
+    throw new Error(`LinkedIn createPost failed: ${err}`)
   }
 
-  
-  const postUrn = res.headers.get("x-restli-id") ?? "";
-  return postUrn;
+  const postUrn = res.headers.get('x-restli-id') ?? ''
+  return postUrn
 }
-
-
 
 /**
  * Publish a TEXT-only post on LinkedIn.
  *
  * Flow: POST /posts with commentary only.
  */
-export const LinkedInText = async (
-  payload: PlatformJobPayload,
-  env: Env,
-): Promise<void> => {
-  const db = (await import("@repo/db")).createDb(env.DATABASE_URL);
+export const LinkedInText = async (payload: PlatformJobPayload, env: Env): Promise<void> => {
+  const db = (await import('@repo/db')).createDb(env.DATABASE_URL)
 
-  
-  const data = payload.metadata as LinkedInMetadata;
+  const data = payload.metadata as LinkedInMetadata
 
   try {
-    await markProcessing(db, payload.platformPostId);
+    await markProcessing(db, payload.platformPostId)
 
-    const token = await getAuthToken(db, payload.workspaceId, "linkedin");
+    const token = await getAuthToken(db, payload.workspaceId, 'linkedin')
 
     const postUrn = await createPost(token, {
       author: `urn:li:person:${token.profileId}`,
       commentary: data.caption,
-      visibility: "PUBLIC",
+      visibility: 'PUBLIC',
       distribution: {
-        feedDistribution: "MAIN_FEED",
+        feedDistribution: 'MAIN_FEED',
       },
-      lifecycleState: "PUBLISHED",
-    });
+      lifecycleState: 'PUBLISHED',
+    })
 
-    await markPublished(db, payload.platformPostId, postUrn, `https://www.linkedin.com/feed/update/${postUrn}`);
+    await markPublished(
+      db,
+      payload.platformPostId,
+      postUrn,
+      `https://www.linkedin.com/feed/update/${postUrn}`,
+    )
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    await markFailed(db, payload.platformPostId, msg);
-    throw error;
+    const msg = error instanceof Error ? error.message : String(error)
+    await markFailed(db, payload.platformPostId, msg)
+    throw error
   }
-};
+}
 
 /**
  * Publish a single IMAGE post on LinkedIn.
  *
  * Flow: initImageUpload → stream binary to uploadUrl → createPost with image URN.
  */
-export const LinkedInImage = async (
-  payload: PlatformJobPayload,
-  env: Env,
-): Promise<void> => {
-  const db = (await import("@repo/db")).createDb(env.DATABASE_URL);
-  
-  const data = payload.metadata as LinkedInMetadata;
+export const LinkedInImage = async (payload: PlatformJobPayload, env: Env): Promise<void> => {
+  const db = (await import('@repo/db')).createDb(env.DATABASE_URL)
+
+  const data = payload.metadata as LinkedInMetadata
 
   try {
-    await markProcessing(db, payload.platformPostId);
+    await markProcessing(db, payload.platformPostId)
 
-    const token = await getAuthToken(db, payload.workspaceId, "linkedin");
-    const media = await fetchMedia(db, data.fileIds[0] ?? 0);
+    const token = await getAuthToken(db, payload.workspaceId, 'linkedin')
+    const media = await fetchMedia(db, data.fileIds[0] ?? 0)
 
-    
-    const { uploadUrl, imageUrn } = await initImageUpload(token);
+    const { uploadUrl, imageUrn } = await initImageUpload(token)
 
-    
-    await uploadBinaryStream(uploadUrl, media.url, token);
+    await uploadBinaryStream(uploadUrl, media.url, token)
 
-    
     const postUrn = await createPost(token, {
       author: `urn:li:person:${token.profileId}`,
       commentary: data.caption,
-      visibility: "PUBLIC",
+      visibility: 'PUBLIC',
       distribution: {
-        feedDistribution: "MAIN_FEED",
+        feedDistribution: 'MAIN_FEED',
       },
       content: {
         media: {
           id: imageUrn,
         },
       },
-      lifecycleState: "PUBLISHED",
-    });
+      lifecycleState: 'PUBLISHED',
+    })
 
-    await markPublished(db, payload.platformPostId, postUrn, `https://www.linkedin.com/feed/update/${postUrn}`);
+    await markPublished(
+      db,
+      payload.platformPostId,
+      postUrn,
+      `https://www.linkedin.com/feed/update/${postUrn}`,
+    )
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    await markFailed(db, payload.platformPostId, msg);
-    throw error;
+    const msg = error instanceof Error ? error.message : String(error)
+    await markFailed(db, payload.platformPostId, msg)
+    throw error
   }
-};
+}
 
+export const LinkedInVideo = async (payload: PlatformJobPayload, env: Env): Promise<void> => {
+  const db = (await import('@repo/db')).createDb(env.DATABASE_URL)
 
-export const LinkedInVideo = async (
-  payload: PlatformJobPayload,
-  env: Env,
-): Promise<void> => {
-  const db = (await import("@repo/db")).createDb(env.DATABASE_URL);
-  
-  const data = payload.metadata as LinkedInMetadata;
+  const data = payload.metadata as LinkedInMetadata
 
   try {
-   
-    
+    await markProcessing(db, payload.platformPostId)
 
-    await markProcessing(db, payload.platformPostId);
+    const token = await getAuthToken(db, payload.workspaceId, 'linkedin')
 
-    const token = await getAuthToken(db, payload.workspaceId, "linkedin");
+    const media = await fetchMedia(db, data.fileIds[0] ?? 0)
 
-    
-    const media = await fetchMedia(db, data.fileIds[0] ?? 0);
- 
-    
+    const headRes = await fetch(media.url, { method: 'HEAD' })
 
-    
-    const headRes = await fetch(media.url, { method: "HEAD" });
-
-    
-    const contentLength = parseInt(
-      headRes.headers.get("content-length") ?? "0",
-      10,
-    );
-  
-    
+    const contentLength = parseInt(headRes.headers.get('content-length') ?? '0', 10)
 
     if (!contentLength) {
-      throw new Error("Could not determine video file size from media URL");
+      throw new Error('Could not determine video file size from media URL')
     }
 
-    
-    const { uploadUrl, videoUrn, uploadToken } = await initVideoUpload(
-      token,
-      contentLength,
-    );
+    const { uploadUrl, videoUrn, uploadToken } = await initVideoUpload(token, contentLength)
 
-    
-    
-    const etag = await uploadBinaryStream(uploadUrl, media.url, token);
-   
+    const etag = await uploadBinaryStream(uploadUrl, media.url, token)
 
-    
-    
-await finalizeVideoUpload(token, videoUrn, uploadToken,  etag ? [etag] : []);
-  
+    await finalizeVideoUpload(token, videoUrn, uploadToken, etag ? [etag] : [])
 
-    
     const postUrn = await createPost(token, {
       author: `urn:li:person:${token.profileId}`,
       commentary: data.caption,
-      visibility: "PUBLIC",
+      visibility: 'PUBLIC',
       distribution: {
-        feedDistribution: "MAIN_FEED",
+        feedDistribution: 'MAIN_FEED',
       },
       content: {
         media: {
           id: videoUrn,
         },
       },
-      lifecycleState: "PUBLISHED",
-    });
+      lifecycleState: 'PUBLISHED',
+    })
 
-    
-    await markPublished(db, payload.platformPostId, postUrn, `https://www.linkedin.com/feed/update/${postUrn}`);
+    await markPublished(
+      db,
+      payload.platformPostId,
+      postUrn,
+      `https://www.linkedin.com/feed/update/${postUrn}`,
+    )
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.error("[LinkedInVideo] failed", {
+    const msg = error instanceof Error ? error.message : String(error)
+    console.error('[LinkedInVideo] failed', {
       platformPostId: payload.platformPostId,
       workspaceId: payload.workspaceId,
       error: msg,
       stack: error instanceof Error ? error.stack : undefined,
-    });
-    await markFailed(db, payload.platformPostId, msg);
-    throw error;
+    })
+    await markFailed(db, payload.platformPostId, msg)
+    throw error
   }
-};
+}
 
 /**
  * Publish a MULTI-IMAGE post on LinkedIn.
@@ -389,48 +347,48 @@ await finalizeVideoUpload(token, videoUrn, uploadToken,  etag ? [etag] : []);
  *
  * Docs: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/multiimage-post-api
  */
-export const LinkedInMultiPost = async (
-  payload: PlatformJobPayload,
-  env: Env,
-): Promise<void> => {
-  const db = (await import("@repo/db")).createDb(env.DATABASE_URL);
-  
-  const data = payload.metadata as LinkedInMetadata;
+export const LinkedInMultiPost = async (payload: PlatformJobPayload, env: Env): Promise<void> => {
+  const db = (await import('@repo/db')).createDb(env.DATABASE_URL)
+
+  const data = payload.metadata as LinkedInMetadata
 
   try {
-    await markProcessing(db, payload.platformPostId);
+    await markProcessing(db, payload.platformPostId)
 
-    const token = await getAuthToken(db, payload.workspaceId, "linkedin");
-    const mediaItems = await fetchMediaMany(db, data.fileIds);
+    const token = await getAuthToken(db, payload.workspaceId, 'linkedin')
+    const mediaItems = await fetchMediaMany(db, data.fileIds)
 
-    
-    const imageUrns: string[] = [];
+    const imageUrns: string[] = []
     for (const item of mediaItems) {
-      const { uploadUrl, imageUrn } = await initImageUpload(token);
-      await uploadBinaryStream(uploadUrl, item.url, token);
-      imageUrns.push(imageUrn);
+      const { uploadUrl, imageUrn } = await initImageUpload(token)
+      await uploadBinaryStream(uploadUrl, item.url, token)
+      imageUrns.push(imageUrn)
     }
 
-    
     const postUrn = await createPost(token, {
       author: `urn:li:person:${token.profileId}`,
       commentary: data.caption,
-      visibility: "PUBLIC",
+      visibility: 'PUBLIC',
       distribution: {
-        feedDistribution: "MAIN_FEED",
+        feedDistribution: 'MAIN_FEED',
       },
       content: {
         multiImage: {
           images: imageUrns.map((urn) => ({ id: urn })),
         },
       },
-      lifecycleState: "PUBLISHED",
-    });
+      lifecycleState: 'PUBLISHED',
+    })
 
-    await markPublished(db, payload.platformPostId, postUrn, `https://www.linkedin.com/feed/update/${postUrn}`);
+    await markPublished(
+      db,
+      payload.platformPostId,
+      postUrn,
+      `https://www.linkedin.com/feed/update/${postUrn}`,
+    )
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    await markFailed(db, payload.platformPostId, msg);
-    throw error;
+    const msg = error instanceof Error ? error.message : String(error)
+    await markFailed(db, payload.platformPostId, msg)
+    throw error
   }
-};
+}

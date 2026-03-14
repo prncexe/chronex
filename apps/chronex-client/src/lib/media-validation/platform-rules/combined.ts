@@ -1,7 +1,5 @@
-export { default as instagram } from "./instagram";
-export { default as linkedin } from "./linkedin";
-export { default as threads } from "./threads";
-export { default as slack } from "./slack";
-export { default as discord } from "./discord";
-
-
+export { default as instagram } from './instagram'
+export { default as linkedin } from './linkedin'
+export { default as threads } from './threads'
+export { default as slack } from './slack'
+export { default as discord } from './discord'

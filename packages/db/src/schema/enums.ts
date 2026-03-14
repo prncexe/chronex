@@ -1,31 +1,31 @@
-import { pgEnum } from "drizzle-orm/pg-core";
+import { pgEnum } from 'drizzle-orm/pg-core'
 
 // Post status enums
-export const postStatusEnum = pgEnum("post_status", [
-  "scheduled",
-  "published",
-  "publishing",
-  "failed",
-]);
+export const postStatusEnum = pgEnum('post_status', [
+  'scheduled',
+  'published',
+  'publishing',
+  'failed',
+])
 
-export const platformPostStatusEnum = pgEnum("platform_post_status", [
-  "pending",
-  "processing",
-  "published",
-  "failed",
-]);
+export const platformPostStatusEnum = pgEnum('platform_post_status', [
+  'pending',
+  'processing',
+  'published',
+  'failed',
+])
 
 // Media enums
-export const mediaTypeEnum = pgEnum("media_type", [ "image", "video"]);
+export const mediaTypeEnum = pgEnum('media_type', ['image', 'video'])
 
 // Platform enum
-export const platformEnum = pgEnum("platform", [
-  "linkedin",
-  "instagram",
-  "threads",
-  "slack",
-  "discord",
-]);
+export const platformEnum = pgEnum('platform', [
+  'linkedin',
+  'instagram',
+  'threads',
+  'slack',
+  'discord',
+])
 
 //use this for future reference if we want to add platform-specific enums
 

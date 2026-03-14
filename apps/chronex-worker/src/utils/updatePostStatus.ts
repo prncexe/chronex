@@ -1,11 +1,11 @@
-import { DB, platformPosts, eq, post } from "@repo/db";
+import { DB, platformPosts, eq, post } from '@repo/db'
 
-type PlatformPostStatus = "pending" | "processing" | "published" | "failed";
+type PlatformPostStatus = 'pending' | 'processing' | 'published' | 'failed'
 
 export async function updatePostStatus(
   db: DB,
   postId: number,
-  status: "scheduled" |  "published" | "failed"|"publishing",
+  status: 'scheduled' | 'published' | 'failed' | 'publishing',
 ) {
   await db
     .update(post)
@@ -13,19 +13,18 @@ export async function updatePostStatus(
       status,
       updatedAt: new Date(),
     })
-    .where(eq(post.id, postId));
+    .where(eq(post.id, postId))
 }
-
 
 export async function updatePlatformPostStatus(
   db: DB,
   platformPostId: number,
   status: PlatformPostStatus,
   extra?: {
-    externalId?: string;
-    postUrl?: string;
-    errorMessage?: string;
-    publishedAt?: Date;
+    externalId?: string
+    postUrl?: string
+    errorMessage?: string
+    publishedAt?: Date
   },
 ) {
   await db
@@ -38,54 +37,43 @@ export async function updatePlatformPostStatus(
       ...(extra?.errorMessage && { errorMessage: extra.errorMessage }),
       ...(extra?.publishedAt && { publishedAt: extra.publishedAt }),
     })
-    .where(eq(platformPosts.id, platformPostId));
+    .where(eq(platformPosts.id, platformPostId))
 }
-
 
 export async function markProcessing(db: DB, platformPostId: number) {
-  return updatePlatformPostStatus(db, platformPostId, "processing");
+  return updatePlatformPostStatus(db, platformPostId, 'processing')
 }
-
 
 export async function markPublished(
   db: DB,
   platformPostId: number,
   externalId: string,
-  postUrl: string
-
+  postUrl: string,
 ) {
-
-  return updatePlatformPostStatus(db, platformPostId, "published", {
+  return updatePlatformPostStatus(db, platformPostId, 'published', {
     externalId,
     publishedAt: new Date(),
     postUrl,
-  });
+  })
 }
 
-
-export async function markFailed(
-  db: DB,
-  platformPostId: number,
-  errorMessage: string,
-) {
-  return updatePlatformPostStatus(db, platformPostId, "failed", {
+export async function markFailed(db: DB, platformPostId: number, errorMessage: string) {
+  return updatePlatformPostStatus(db, platformPostId, 'failed', {
     errorMessage,
-  });
+  })
 }
 export async function markPublishedIGTH(
   db: DB,
   platformPostId: number,
   externalId: string,
-  token:string,
-  url:string,
+  token: string,
+  url: string,
 ) {
-  const response = await fetch(
-  `${url}/${externalId}?fields=permalink&access_token=${token}`
-);
-const res:Record<any,string> = await response.json();
-  return updatePlatformPostStatus(db, platformPostId, "published", {
+  const response = await fetch(`${url}/${externalId}?fields=permalink&access_token=${token}`)
+  const res: Record<any, string> = await response.json()
+  return updatePlatformPostStatus(db, platformPostId, 'published', {
     externalId,
     postUrl: res.permalink,
     publishedAt: new Date(),
-  });
+  })
 }

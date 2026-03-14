@@ -1,8 +1,8 @@
-import { createWorkspaceProcedure } from "../procedures/user/workspace";
-import { createTRPCRouter } from "../trpc";
+import { createWorkspaceProcedure } from '../procedures/user/workspace'
+import { createTRPCRouter } from '../trpc'
 
 const workspaceRouter = createTRPCRouter({
-createWorkspace: createWorkspaceProcedure,
-});
+  createWorkspace: createWorkspaceProcedure,
+})
 
-export default workspaceRouter;
+export default workspaceRouter

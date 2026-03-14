@@ -1,7 +1,7 @@
-import type { DB } from "@/config/drizzle";
+import type { DB } from '@/config/drizzle'
 export const getMetaData = async (fileId: string, db: DB) => {
   try {
-    const newfileId = Number(fileId);
+    const newfileId = Number(fileId)
     const result = await db.query.postMedia.findFirst({
       where: (media, { eq }) => eq(media.id, newfileId),
       columns: {
@@ -14,19 +14,17 @@ export const getMetaData = async (fileId: string, db: DB) => {
         extension: true,
         aspectRatio: true,
       },
-    });
+    })
 
-    if (!result) return result;
+    if (!result) return result
 
     return {
       ...result,
-      size: result.size
-        ? Number((result.size / (1024 * 1024)).toFixed(2))
-        : null,
-    };
+      size: result.size ? Number((result.size / (1024 * 1024)).toFixed(2)) : null,
+    }
   } catch (error) {
-    throw new Error("Failed to retrieve metadata for file", { cause: error });
+    throw new Error('Failed to retrieve metadata for file', { cause: error })
   }
-};
+}
 
-export type FileMetaData = Awaited<ReturnType<typeof getMetaData>>;
+export type FileMetaData = Awaited<ReturnType<typeof getMetaData>>

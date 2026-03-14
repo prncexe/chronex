@@ -3,17 +3,22 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "private":"true",
+  "private": "true",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev:web": "pnpm --filter client dev",
     "dev:worker": "pnpm --filter worker dev",
     "dev": "pnpm -r --parallel dev",
     "build": "pnpm -r --parallel build",
-    "start": "pnpm -r --parallel start"
+    "start": "pnpm -r --parallel start",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.29.3"
+  "packageManager": "pnpm@10.29.3",
+  "devDependencies": {
+    "prettier": "3.8.1"
+  }
 }

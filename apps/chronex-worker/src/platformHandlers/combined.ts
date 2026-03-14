@@ -1,16 +1,5 @@
-
-export {
-  InstagramImage,
-  InstagramReel,
-  InstagramCarousel,
-  InstagramStory,
-} from "./instagram";
-export {
-  LinkedInText,
-  LinkedInImage,
-  LinkedInVideo,
-  LinkedInMultiPost,
-} from "./linkedin";
-export { ThreadsText, ThreadsImage, ThreadsVideo ,ThreadsCarousel} from "./threads";
-export { DiscordMessage, DiscordEmbed, DiscordFile } from "./discord";
-export { SlackMessage, SlackFile } from "./slack";
+export { InstagramImage, InstagramReel, InstagramCarousel, InstagramStory } from './instagram'
+export { LinkedInText, LinkedInImage, LinkedInVideo, LinkedInMultiPost } from './linkedin'
+export { ThreadsText, ThreadsImage, ThreadsVideo, ThreadsCarousel } from './threads'
+export { DiscordMessage, DiscordEmbed, DiscordFile } from './discord'
+export { SlackMessage, SlackFile } from './slack'

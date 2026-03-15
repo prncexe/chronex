@@ -4,7 +4,7 @@ import { NewAuthToken } from '@repo/db'
 import { authToken } from '@repo/db'
 import { workspaceProcedure } from '../../trpc'
 import { authClient } from '@/config/linkedinClient'
-
+import { RestliClient } from 'linkedin-api-client'
 export const linkedinOAuthProcedure = workspaceProcedure
   .input(z.object({ code: z.string() }))
   .mutation(async ({ input, ctx }) => {
@@ -18,10 +18,20 @@ export const linkedinOAuthProcedure = workspaceProcedure
         cause: error,
       })
     }
-
+const client = new RestliClient()
+let response;
+try {
+         response = await client.get({
+            resourcePath: '/userinfo',
+            accessToken:tokenData.access_token
+        });
+    } catch (err) {
+        throw err;
+    }
     const datadb: NewAuthToken = {
       accessToken: tokenData.access_token,
       expiresAt: new Date(Date.now() + tokenData.expires_in * 1000),
+      profileId:response.data.sub,
       platform: 'linkedin',
       userId: ctx.user.id,
       workspaceId: ctx.workspaceId,

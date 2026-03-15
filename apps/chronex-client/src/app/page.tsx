@@ -18,7 +18,7 @@ export default function Home() {
     }
   }, [getUrl.data])
   const chupchapsignupkarle = async () => {
-    const data = await authClient.signIn.social(
+    await authClient.signIn.social(
       {
         provider: 'github',
       },
@@ -36,59 +36,25 @@ export default function Home() {
       },
     )
   }
-  // Sample payload for createPost
-  const samplePostData = {
-    title: 'My awesome post',
-    content: ['5', '3', '2', '1', '9'], // Array of media IDs from your storage
-    platforms: ['instagram', 'linkedin', 'discord'],
-    scheduledAt: new Date('2026-03-05T10:00:00Z'),
-    platformdata: [
-      // Instagram carousel
+  const chupchapsignoutkarle = async () => {
+    await authClient.signOut(
+      {},
       {
-        platform: 'instagram',
-        type: 'carousel',
-        caption: 'Check out these amazing photos! 📸',
-        hashtags: ['travel', 'photography', 'sunset'],
-        fileIds: ['5', '3'],
+        onRequest: (ctx) => {
+          console.log('Signout request started')
+        },
+        onSuccess: (ctx) => {
+          console.log('Signout successful')
+          localStorage.removeItem('workspaceId')
+        },
+        onError: (ctx) => {
+          // display the error message
+          alert(ctx.error.message)
+        },
       },
-      // LinkedIn image post
-      {
-        platform: 'linkedin',
-        type: 'image',
-        caption: 'Excited to share our latest project update!',
-        fileIds: ['2'],
-      },
-      // Discord message
-      {
-        platform: 'discord',
-        type: 'message',
-        caption: 'New content just dropped!',
-        fileIds: ['1', '9'],
-      },
-    ],
+    )
   }
 
-  // For threads + slack combo
-  const anotherSample = {
-    title: 'Text-based post',
-    content: ['media-id-789'],
-    platforms: ['threads', 'slack'],
-    scheduledAt: new Date('2026-03-10T14:30:00Z'),
-    platformdata: [
-      {
-        platform: 'threads',
-        type: 'text',
-        caption: 'Just sharing some thoughts...',
-        description: 'Extended text goes here',
-        hashtags: ['thoughts'],
-      },
-      {
-        platform: 'slack',
-        type: 'message',
-        caption: "Team update: we're live!",
-      },
-    ],
-  }
   const createPost = async () => {
     const date = new Date(Date.now()) // Schedule for 1 hour from now
     const data = await users.mutateAsync({
@@ -162,7 +128,9 @@ export default function Home() {
       {/* <button onClick={()=>fetch("/api")}>click to add users</button> */}
       <button onClick={save}>click to authenticate with Instagram</button>
       <br />
-      <button onClick={() => getUrl.refetch()}>click to fetch upload URL</button>
+      <button className="font-bold text-red-500" onClick={() => getUrl.refetch()}>
+        click to fetch upload URL
+      </button>
     </>
   )
 }

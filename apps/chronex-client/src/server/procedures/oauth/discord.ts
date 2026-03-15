@@ -8,7 +8,7 @@ export const discordOAuthProcedure = workspaceProcedure
   .input(z.object({ guild_id: z.string() }))
   .mutation(async ({ input, ctx }) => {
     const datadb: NewAuthToken = {
-      accessToken: input.guild_id,
+      accessToken: '',
       profileId: input.guild_id,
       platform: 'discord',
       userId: ctx.user.id,

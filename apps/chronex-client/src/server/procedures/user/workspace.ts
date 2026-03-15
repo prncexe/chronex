@@ -22,11 +22,10 @@ export const createWorkspaceProcedure = authProcedure
     return newworkspace
   })
 
-// export const getWorkspacesProcedure = authProcedure.query(async ({ ctx }) => {
-//   const userId = ctx.user.id;
-//   // Fetch workspaces owned by the user
-//   const workspaces = await ctx.db.query.workspace.findMany({
-//     where: (workspace, { eq }) => eq(workspace.createdBy, userId),
-//   });
-//     return workspaces;
-// });
+export const getWorkspacesProcedure = authProcedure.query(async ({ ctx }) => {
+  const userId = ctx.user.id
+  const workspaces = await ctx.db.query.workspace.findMany({
+    where: (workspace, { eq }) => eq(workspace.createdBy, userId),
+  })
+  return workspaces
+})

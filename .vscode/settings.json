@@ -1,5 +1,9 @@
 {
   "files.associations": {
     ".dev.vars": "dotenv"
+  },
+  "tailwindCSS.experimental.configFile": "./apps/chronex-client/src/app/globals.css",
+  "editor.quickSuggestions": {
+    "strings": "on"
   }
 }

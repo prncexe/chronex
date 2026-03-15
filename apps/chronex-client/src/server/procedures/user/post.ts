@@ -131,7 +131,6 @@ export const createPost = workspaceProcedure.input(InputSchema).mutation(async (
       .values(platformEntries)
       .returning({ id: platformPosts.id, platform: platformPosts.platform })
 
-
     const msUntilScheduled = scheduledMs - nowMs
     const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000
     console.log(insertedPlatformPosts)

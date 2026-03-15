@@ -1,5 +1,4 @@
-const CF_BASE = 'https://api.cloudflare.com/client/v4'
-
+import { CF_BASE } from '../constants/url'
 function getConfig() {
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID
   const queueId = process.env.CLOUDFLARE_QUEUE_ID

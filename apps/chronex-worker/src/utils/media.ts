@@ -1,7 +1,6 @@
 import { DB } from '@repo/db'
 import { getBackblazeSignedUrl } from '../config/backBlaze'
 
-
 export async function fetchMedia(db: DB, fileId: number) {
   const media = await db.query.postMedia.findFirst({
     where: (m, { eq }) => eq(m.id, fileId),
@@ -16,12 +15,10 @@ export async function fetchMedia(db: DB, fileId: number) {
   return { ...media, url: signedUrl }
 }
 
-
 export async function fetchMediaMany(db: DB, fileIds: number[]) {
   const mediaItems = await Promise.all(fileIds.map((id) => fetchMedia(db, id)))
   return mediaItems
 }
-
 
 export async function downloadMediaBinary(url: string) {
   const res = await fetch(url)
@@ -34,7 +31,6 @@ export async function downloadMediaBinary(url: string) {
 
   return { buffer, contentType, size: buffer.byteLength }
 }
-
 
 export async function streamMedia(url: string) {
   const res = await fetch(url)

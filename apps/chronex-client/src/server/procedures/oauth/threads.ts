@@ -11,7 +11,7 @@ export const threadsOAuthProcedure = workspaceProcedure
   .mutation(async ({ input, ctx }) => {
     const shortLivedToken = await exchangeCodeForShortLivedToken({
       url: THREADS_SHORT_LIVED_TOKEN_URL,
-      clientId: process.env.NEXT_PUBLIC_THREADS_CLIENT_ID!,
+      clientId: process.env.NEXT_PUBLIC_THREADS_APP_ID!,
       clientSecret: process.env.THREADS_CLIENT_SECRET!,
       redirectUri: process.env.NEXT_PUBLIC_THREADS_REDIRECT_URI!,
       code: input.code,

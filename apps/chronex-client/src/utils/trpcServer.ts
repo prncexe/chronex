@@ -6,7 +6,6 @@ import { createTRPCContext } from '@/server/trpc'
 export const getCaller = cache(async () => {
   const incoming = await nextHeaders()
   const cookieStore = await cookies()
-console.log("cookies:", cookieStore.getAll())
   const h = new Headers(incoming)
 
   const workspaceIdFromCookie = cookieStore.get('workspaceId')?.value

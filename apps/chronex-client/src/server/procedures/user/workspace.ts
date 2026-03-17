@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { authProcedure } from '@/server/trpc'
-import { NewWorkspace, Workspace } from '@repo/db'
+import { NewWorkspace } from '@repo/db'
 import { workspace } from '@repo/db'
 export const createWorkspaceProcedure = authProcedure
   .input(
@@ -18,12 +18,12 @@ export const createWorkspaceProcedure = authProcedure
     }
     const [newworkspace] = await ctx.db.insert(workspace).values(values).returning()
     if (!newworkspace) throw new Error('Insert failed')
-ctx.cookies.set('workspaceId', String(newworkspace.id), {
+    ctx.cookies.set('workspaceId', String(newworkspace.id), {
       httpOnly: false,
       path: '/',
-            sameSite: "lax",
-  
-    })  
+      sameSite: "none",  
+      secure: true,
+    })
 
     return newworkspace
   })

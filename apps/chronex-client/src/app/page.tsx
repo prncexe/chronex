@@ -9,7 +9,6 @@ export default function Home() {
   const media = trpc.post.saveMedia.useMutation()
   // const getusers = trpc.example.getAll.useQuery();
   // console.log(getusers.data);
-
   const getUrl = trpc.post.getUploadUrl.useQuery(undefined, {
     enabled: false,
   })
@@ -76,7 +75,7 @@ export default function Home() {
           platform: 'discord',
           type: 'message',
           caption: 'yeh discord file hai',
-          channelId: '1060498088080457768',
+          channelId: '1042078978430746666',
           // fileIds:["9","3"]
         },
         // {

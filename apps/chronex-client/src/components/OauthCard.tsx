@@ -13,7 +13,7 @@ const OauthCard = ({
 }) => {
   const handleConnect = () => {
     const url = connectMapper[platformname]()
-    window.open(url, '_self')
+    window.open(url, '','width=600,height=600,left=100,top=100')
   }
   const handleDisconnect = () => {
     const url = disconnectMapper[platformname]()

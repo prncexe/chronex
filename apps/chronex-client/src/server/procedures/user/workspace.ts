@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { authProcedure } from '@/server/trpc'
-import { NewWorkspace } from '@repo/db'
+import type { NewWorkspace } from '@repo/db'
 import { workspace } from '@repo/db'
 export const createWorkspaceProcedure = authProcedure
   .input(

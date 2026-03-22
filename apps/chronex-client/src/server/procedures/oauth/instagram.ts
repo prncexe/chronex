@@ -1,7 +1,7 @@
 import { workspaceProcedure } from '../../trpc'
 import { INSTA_SHORT_LIVED_TOKEN_URL, INSTA_LONG_LIVED_TOKEN_URL, INSTA_PROFILE_URL } from '@/constants/url'
 import z from 'zod'
-import { NewAuthToken } from '@repo/db'
+import type { NewAuthToken } from '@repo/db'
 import { authToken } from '@repo/db'
 
 import { exchangeCodeForShortLivedToken, exchangeForLongLivedToken } from './types'
@@ -23,7 +23,7 @@ export const instagramOAuthProcedure = workspaceProcedure
       accessToken: shortLivedToken.access_token,
       grantType: 'ig_exchange_token',
     })
-    const url = `${INSTA_PROFILE_URL}/v24.0/me?access_token=${longLivedToken.access_token}`;
+    const url = `${INSTA_PROFILE_URL}/v24.0/me?fields=id,username&access_token=${longLivedToken.access_token}`;
 
     const response = await fetch(url);
 
@@ -40,6 +40,7 @@ export const instagramOAuthProcedure = workspaceProcedure
       userId: ctx.user.id,
       workspaceId: ctx.workspaceId,
       profileId: data.id,
+      profileName:data.username,
       isRefreshable: true,
     }
     await ctx.db.insert(authToken).values(datadb)

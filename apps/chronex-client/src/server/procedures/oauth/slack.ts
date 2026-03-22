@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
-import { NewAuthToken } from '@repo/db'
+import type { NewAuthToken } from '@repo/db'
 import { authToken } from '@repo/db'
 
 import { workspaceProcedure } from '../../trpc'
@@ -42,6 +42,7 @@ export const slackOAuthProcedure = workspaceProcedure
       accessToken: tokenData.authed_user.access_token,
       profileId: tokenData.team?.id,
       platform: 'slack',
+      profileName: tokenData.team?.name,
       userId: ctx.user.id,
       workspaceId: ctx.workspaceId,
       isRefreshable: false,

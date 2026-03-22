@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
-import { NewAuthToken } from '@repo/db'
+import type { NewAuthToken } from '@repo/db'
 import { authToken } from '@repo/db'
 import { workspaceProcedure } from '../../trpc'
 import { DISCORD_TOKEN_URL } from '@/constants/url'
@@ -33,6 +33,7 @@ export const discordOAuthProcedure = workspaceProcedure
       const datadb: NewAuthToken = {
         accessToken: '',
         profileId: data.guild.id,
+        profileName:data.guild.name,
         platform: 'discord',
         userId: ctx.user.id,
         workspaceId: ctx.workspaceId,

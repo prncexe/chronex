@@ -2,9 +2,10 @@ import { workspaceProcedure } from '@/server/trpc'
 import { z } from 'zod'
 import { b2 } from '@/config/backBlaze'
 import { TRPCError } from '@trpc/server'
-import { NewPlatformPost, post, postMedia } from '@repo/db'
+import { post, postMedia } from '@repo/db'
+import type { NewPlatformPost } from '@repo/db'
 import { platformPosts } from '@repo/db'
-import { NewPostMedia } from '@repo/db'
+import type { NewPostMedia } from '@repo/db'
 import { fileInfo } from '@/types/zod/file'
 import { InputSchema } from '@/types/zod/platform'
 import { getMetaData } from '@/utils/fileFetch'
@@ -50,13 +51,13 @@ export const saveMedia = workspaceProcedure
         url: input.fileId,
         type: typeandExtension[0] as 'image' | 'video',
         size: info.contentLength,
-        height: info.fileInfo.height,
-        width: info.fileInfo.width,
-        duration: info.fileInfo.duration,
+        height: Number(info.fileInfo.height),
+        width: Number(info.fileInfo.width),
+        duration: info.fileInfo.duration ? Number(info.fileInfo.duration) : null,
         extension: typeandExtension[1],
         aspectRatio: (() => {
-          const w = info.fileInfo.width
-          const h = info.fileInfo.height
+          const w = Number(info.fileInfo.width)
+          const h = Number(info.fileInfo.height)
           if (!w || !h) return null
           const g = gcd(w, h)
           return `${w / g}:${h / g}`

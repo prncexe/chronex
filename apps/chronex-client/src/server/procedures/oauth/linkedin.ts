@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server'
 import z from 'zod'
-import { NewAuthToken } from '@repo/db'
+import type { NewAuthToken } from '@repo/db'
 import { authToken } from '@repo/db'
 import { workspaceProcedure } from '../../trpc'
 import { authClient } from '@/config/linkedinClient'
@@ -32,6 +32,7 @@ try {
       accessToken: tokenData.access_token,
       expiresAt: new Date(Date.now() + tokenData.expires_in * 1000),
       profileId:response.data.sub,
+      profileName:response.data.name,
       platform: 'linkedin',
       userId: ctx.user.id,
       workspaceId: ctx.workspaceId,

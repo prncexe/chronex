@@ -29,6 +29,7 @@ export const authToken = pgTable(
     isRefreshable: boolean('is_refreshable').notNull(),
     refreshToken: text('refresh_token'),
     profileId: text('profile_id'),
+    profileName: text('profile_name'),
     expiresAt: timestamp('expires_at', { mode: 'date' }),
     createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { mode: 'date' })

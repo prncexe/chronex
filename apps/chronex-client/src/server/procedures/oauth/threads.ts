@@ -1,6 +1,6 @@
 import { workspaceProcedure } from '@/server/trpc'
 import z from 'zod'
-import { NewAuthToken } from '@repo/db'
+import type { NewAuthToken } from '@repo/db'
 import { authToken } from '@repo/db'
 
 import { THREADS_LONG_LIVED_TOKEN_URL, THREADS_PROFILE_URL, THREADS_SHORT_LIVED_TOKEN_URL } from '@/constants/url'
@@ -23,7 +23,7 @@ export const threadsOAuthProcedure = workspaceProcedure
       accessToken: shortLivedToken.access_token,
       grantType: 'th_exchange_token',
     })
-const url = `${THREADS_PROFILE_URL}/v1.0/me?access_token=${longLivedToken.access_token}`;
+const url = `${THREADS_PROFILE_URL}/v1.0/me?fields=id,username&access_token=${longLivedToken.access_token}`;
 
     const response = await fetch(url);
 
@@ -40,6 +40,7 @@ const url = `${THREADS_PROFILE_URL}/v1.0/me?access_token=${longLivedToken.access
       userId: ctx.user.id,
       workspaceId: ctx.workspaceId,
       profileId: data.id,
+      profileName:data.username,
       isRefreshable: true,
     }
     await ctx.db.insert(authToken).values(datadb)

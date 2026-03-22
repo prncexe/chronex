@@ -1,0 +1,29 @@
+
+> client@0.1.0 build D:\Desktop\chronex\apps\chronex-client
+> next build
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 9.9s
+  Running TypeScript ...
+  Collecting page data using 11 workers ...
+TypeError: Cannot read properties of null (reading 'constructor')
+    at r (D:\Desktop\chronex\apps\chronex-client\.next\server\chunks\_3cab031b._.js:1:402)
+    at <unknown> (D:\Desktop\chronex\apps\chronex-client\.next\server\chunks\_3cab031b._.js:25:45517)
+    at iO (D:\Desktop\chronex\apps\chronex-client\.next\server\chunks\_3cab031b._.js:25:46308)
+    at iC (D:\Desktop\chronex\apps\chronex-client\.next\server\chunks\_3cab031b._.js:25:46807)
+    at iN (D:\Desktop\chronex\apps\chronex-client\.next\server\chunks\_3cab031b._.js:25:47004)
+    at module evaluation (D:\Desktop\chronex\apps\chronex-client\.next\server\chunks\_3cab031b._.js:25:47471)
+    at instantiateModule (D:\Desktop\chronex\apps\chronex-client\.next\server\chunks\[turbopack]_runtime.js:740:9)
+    at getOrInstantiateModuleFromParent (D:\Desktop\chronex\apps\chronex-client\.next\server\chunks\[turbopack]_runtime.js:763:12)
+    at Context.esmImport [as i] (D:\Desktop\chronex\apps\chronex-client\.next\server\chunks\[turbopack]_runtime.js:228:20)
+    at module evaluation (D:\Desktop\chronex\apps\chronex-client\.next\server\chunks\_3cab031b._.js:25:46961)
+
+> Build error occurred
+Error: Failed to collect page data for /api/trpc/[trpc]
+    at ignore-listed frames {
+  type: 'Error'
+}
+ ELIFECYCLE  Command failed with exit code 1.

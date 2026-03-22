@@ -4,6 +4,7 @@ import { connectMapper } from '@/lib/oauthMapper/connect'
 import { disconnectMapper } from '@/lib/oauthMapper/disconnect'
 import { PlatformId } from '@/config/platforms'
 import { Button } from './ui/button'
+import IconRenderer from '@/lib/logoMapping'
 const OauthCard = ({
   platformname,
   isVerified,
@@ -20,11 +21,11 @@ const OauthCard = ({
     window.open(url, '_self')
   }
   return (
-    <Card className="w-[350px]">
+    <Card className="">
       <CardHeader>
-        <CardTitle>{platformname}</CardTitle>
+        <CardTitle className='mx-auto'><IconRenderer name={platformname}/></CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className='mx-auto'>
         <Button className="cursor-pointer" onClick={isVerified ? handleDisconnect : handleConnect}>
           {isVerified ? 'Disconnect' : 'Connect'}
         </Button>

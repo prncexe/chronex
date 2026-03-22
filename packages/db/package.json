@@ -8,7 +8,6 @@
     "drizzle-orm": "^0.45.1"
   },
   "devDependencies": {
-    "@types/node": "^20.19.35",
-    "drizzle-kit": "^0.31.9"
+    "@types/node": "^20.19.35"
   }
 }

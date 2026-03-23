@@ -1,6 +1,7 @@
 import { createTRPCRouter } from '../trpc'
-import { getUser } from '../procedures/user/user'
+import { getMedia, getUser } from '../procedures/user/user'
 
 export const userRouter = createTRPCRouter({
   getUser,
+  getMedia,
 })

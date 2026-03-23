@@ -13,7 +13,11 @@
     "start": "pnpm -r --parallel start",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\"",
-    "prepare": "husky"
+    "prepare": "husky",
+    "db:generate": "pnpm --filter @repo/db generate",
+    "db:push": "pnpm --filter @repo/db push",
+    "db:studio": "pnpm --filter @repo/db studio",
+    "db:migrate": "pnpm --filter @repo/db migrate"
   },
   "keywords": [],
   "author": "",

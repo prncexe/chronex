@@ -2,10 +2,10 @@ import { initTRPC, TRPCError } from '@trpc/server'
 import superjson from 'superjson'
 import { db } from '@/config/drizzle'
 import { auth } from '@/config/authInstance'
-import { cookies } from "next/headers"
+import { cookies } from 'next/headers'
 
 export const createTRPCContext = async (opts: { headers: Headers }) => {
-    const cookieStore = await cookies()
+  const cookieStore = await cookies()
 
   const workspaceId = cookieStore.get('workspaceId')?.value || opts.headers.get('x-workspace-id')
 
@@ -55,7 +55,25 @@ export const workspaceProcedure = authProcedure.use(async ({ ctx, next }) => {
       message: 'You do not have access to this workspace',
     })
   }
-
+  const workspace = await ctx.db.query.workspace.findFirst({
+    where: (workspace, { eq, and }) =>
+      and(eq(workspace.id, Number(ctx.workspaceId)), eq(workspace.createdBy, ctx.user.id)),
+    columns: {
+      id: true,
+      name: true,
+      description: true,
+      image: true,
+      createdBy: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  })
+  if (!workspace) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'You do not have access to this workspace',
+    })
+  }
   return next({
     ctx: {
       ...ctx,

@@ -59,25 +59,25 @@ export default function Home() {
     const date = new Date(Date.now()) // Schedule for 1 hour from now
     const data = await users.mutateAsync({
       title: 'My awesome post',
-      content: [], // Array of media IDs from your storage
+      content: ['1'], // Array of media IDs from your storage
       platforms: ['slack', 'instagram', 'linkedin', 'threads', 'discord'],
       scheduledAt: date,
       platformdata: [
-        //  {
-        //     platform: "slack",
-        //     type: "file",
-        //     caption: "yokoso watashino soul society",
-        //     fileIds:["1","2","9"],
-        //     channelId:"C0AEB4DEQHK",
-        //     workspaceName:"chronex-group"
-        //  },
         {
-          platform: 'discord',
-          type: 'message',
-          caption: 'yeh discord file hai',
-          channelId: '1042078978430746666',
-          // fileIds:["9","3"]
+          platform: 'slack',
+          type: 'file',
+          caption: 'yokoso watashino soul society',
+          fileIds: ['1'],
+          channelId: 'C0AEB4DEQHK',
+          workspaceName: 'chronex-group',
         },
+        // {
+        //   platform: 'discord',
+        //   type: 'message',
+        //   caption: 'yeh discord file hai',
+        //   channelId: '1042078978430746666',
+        //   // fileIds:["9","3"]
+        // },
         // {
         //     platform: "instagram",
         //     type: "carousel",

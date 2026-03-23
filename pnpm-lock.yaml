@@ -131,12 +131,6 @@ importers:
       '@types/react-dom':
         specifier: ^19
         version: 19.2.3(@types/react@19.2.14)
-      drizzle-kit:
-        specifier: ^0.31.9
-        version: 0.31.9
-      drizzle-seed:
-        specifier: ^0.3.1
-        version: 0.3.1(drizzle-orm@0.45.1(@cloudflare/workers-types@4.20260313.1)(@neondatabase/serverless@1.0.2)(@types/pg@8.18.0)(kysely@0.28.12)(postgres@3.4.8))
       eslint:
         specifier: ^9
         version: 9.39.4(jiti@2.6.1)
@@ -175,8 +169,11 @@ importers:
         version: 0.45.1(@cloudflare/workers-types@4.20260313.1)(@neondatabase/serverless@1.0.2)(@types/pg@8.18.0)(kysely@0.28.12)(postgres@3.4.8)
     devDependencies:
       '@types/node':
-        specifier: ^20.19.35
+        specifier: ^20.19.37
         version: 20.19.37
+      drizzle-kit:
+        specifier: ^0.31.9
+        version: 0.31.9
 
 packages:
 
@@ -3172,14 +3169,6 @@ packages:
       sqlite3:
         optional: true
 
-  drizzle-seed@0.3.1:
-    resolution: {integrity: sha512-F/0lgvfOAsqlYoHM/QAGut4xXIOXoE5VoAdv2FIl7DpGYVXlAzKuJO+IphkKUFK3Dz+rFlOsQLnMNrvoQ0cx7g==}
-    peerDependencies:
-      drizzle-orm: '>=0.36.4'
-    peerDependenciesMeta:
-      drizzle-orm:
-        optional: true
-
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
     engines: {node: '>= 0.4'}
@@ -4650,9 +4639,6 @@ packages:
   punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
-
-  pure-rand@6.1.0:
-    resolution: {integrity: sha512-bVWawvoZoBYpp6yIoQtQXHZjmz35RSVHnUOTefl8Vcjr8snTPY1wnpSPMWekcFwbxI6gtmT7rSYPFvz71ldiOA==}
 
   qs@6.15.0:
     resolution: {integrity: sha512-mAZTtNCeetKMH+pSjrb76NAM8V9a05I9aBZOHztWy/UqcJdQYNsf59vrRKWnojAT9Y+GbIvoTBC++CPHqpDBhQ==}
@@ -8055,12 +8041,6 @@ snapshots:
       kysely: 0.28.12
       postgres: 3.4.8
 
-  drizzle-seed@0.3.1(drizzle-orm@0.45.1(@cloudflare/workers-types@4.20260313.1)(@neondatabase/serverless@1.0.2)(@types/pg@8.18.0)(kysely@0.28.12)(postgres@3.4.8)):
-    dependencies:
-      pure-rand: 6.1.0
-    optionalDependencies:
-      drizzle-orm: 0.45.1(@cloudflare/workers-types@4.20260313.1)(@neondatabase/serverless@1.0.2)(@types/pg@8.18.0)(kysely@0.28.12)(postgres@3.4.8)
-
   dunder-proto@1.0.1:
     dependencies:
       call-bind-apply-helpers: 1.0.2
@@ -9631,8 +9611,6 @@ snapshots:
   proxy-from-env@1.1.0: {}
 
   punycode@2.3.1: {}
-
-  pure-rand@6.1.0: {}
 
   qs@6.15.0:
     dependencies:

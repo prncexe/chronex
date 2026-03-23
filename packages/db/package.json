@@ -3,11 +3,18 @@
   "version": "1.0.0",
   "main": "src/index.ts",
   "types": "src/index.ts",
+  "scripts": {
+    "generate": "drizzle-kit generate",
+    "push": "drizzle-kit push",
+    "studio": "drizzle-kit studio",
+    "migrate": "drizzle-kit migrate"
+  },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
     "drizzle-orm": "^0.45.1"
   },
   "devDependencies": {
-    "@types/node": "^20.19.35"
+    "@types/node": "^20.19.37",
+    "drizzle-kit": "^0.31.9"
   }
 }

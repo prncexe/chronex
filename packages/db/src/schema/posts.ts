@@ -42,7 +42,7 @@ export const postMedia = pgTable(
   'media',
   {
     id: serial('id').primaryKey(),
-
+    name: text('name').notNull(),
     workspaceId: integer('workspace_id')
       .notNull()
       .references(() => workspace.id, { onDelete: 'cascade' }),
@@ -59,6 +59,12 @@ export const postMedia = pgTable(
     aspectRatio: text('aspect_ratio'),
 
     createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at')
+      .defaultNow()
+      .notNull()
+      .$onUpdateFn(() => new Date()),
+    expiresAt: timestamp('expires_at'),
+    downloadToken: text('download_token'),
   },
   (table) => ({
     workspaceIdIdx: index('media_workspace_id_idx').on(table.workspaceId),

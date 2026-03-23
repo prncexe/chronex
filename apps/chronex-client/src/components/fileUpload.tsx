@@ -298,18 +298,19 @@ export default function FileUpload({
 
         const dimensions = await getMediaDimensions(pf.file)
 
-        const { fileId } = await uploadFileToB2(
+        const response = await uploadFileToB2(
           pf.file,
           uploadData.uploadUrl,
           uploadData.authorizationToken,
           dimensions,
         )
+        console.log(response)
 
         const contentType = pf.file.type.startsWith('video/') ? 'video' : 'image'
 
         await saveMedia.mutateAsync({
           contentType: contentType as 'image' | 'video',
-          fileId,
+          fileId: response.fileId,
         })
 
         setFiles((prev) =>
@@ -418,7 +419,7 @@ export default function FileUpload({
               <Button
                 type="button"
                 onClick={clearAll}
-                className="text-xs cursor-pointer text-muted  transition-colors hover:bg-primary/80"
+                className="cursor-pointer text-xs text-muted transition-colors hover:bg-primary/80"
               >
                 Clear all
               </Button>
@@ -491,7 +492,7 @@ export default function FileUpload({
                         removeFile(f.id)
                       }}
                       className={cn(
-                        'flex size-7 cursor-pointer shrink-0 items-center justify-center rounded-md text-muted-foreground transition-all bg-secondary hover:text-destructive',
+                        'flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md bg-secondary text-muted-foreground transition-all hover:text-destructive',
                         f.status === 'uploading' && 'pointer-events-none opacity-0',
                       )}
                       aria-label={`Remove ${f.file.name}`}
@@ -508,7 +509,12 @@ export default function FileUpload({
 
       {hasFiles && (
         <CardFooter className="gap-2">
-          <Button variant="outline" onClick={clearAll} disabled={isUploading} className="flex-1 cursor-pointer">
+          <Button
+            variant="outline"
+            onClick={clearAll}
+            disabled={isUploading}
+            className="flex-1 cursor-pointer"
+          >
             Cancel
           </Button>
           <Button

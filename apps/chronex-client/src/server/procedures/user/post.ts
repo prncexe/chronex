@@ -41,14 +41,14 @@ export const saveMedia = workspaceProcedure
   .mutation(async ({ input, ctx }) => {
     try {
       await b2.authorize()
-      const info = await b2
-        .getFileInfo({ fileId: input.fileId })
-        .then((res) => fileInfo.parse(res.data))
+      const info = await b2.getFileInfo({ fileId: input.fileId }).then((res) => res.data)
+      const fileUrl = `${process.env.B2_DOWNLOAD_URL}/b2api/v3/b2_download_file_by_id?fileId=${input.fileId}`
       const typeandExtension = info.contentType.split('/')
       const mediaRecord: NewPostMedia = {
         workspaceId: ctx.workspaceId,
+        name: info.fileName,
         userId: ctx.user.id,
-        url: input.fileId,
+        url: fileUrl,
         type: typeandExtension[0] as 'image' | 'video',
         size: info.contentLength,
         height: Number(info.fileInfo.height),

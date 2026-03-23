@@ -3,9 +3,9 @@
   "compilerOptions": {
     "composite": false,
     "declaration": false,
-    "noEmit": true
-    // "types": ["node"]
+    "noEmit": true,
+    "types": ["node"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "drizzle.config.ts"],
   "exclude": ["node_modules"]
 }

@@ -302,7 +302,12 @@ export const DiscordFile = async (payload: PlatformJobPayload, env: Env): Promis
     // Build lightweight file descriptors — no binary download, just URLs
     const files = mediaItems.map((item, idx) => {
       const urlPath = new URL(item.url).pathname
-      const name = urlPath.split('/').pop() ?? `file_${idx}.${item.extension ?? 'bin'}`
+      let name = urlPath.split('/').pop() ?? `file_${idx}`
+      // Ensure the filename has a proper extension so Discord renders it inline
+      const ext = item.extension ?? 'bin'
+      if (!name.includes('.')) {
+        name = `${name}.${ext}`
+      }
       return { name, mediaUrl: item.url }
     })
 

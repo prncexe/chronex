@@ -8,7 +8,6 @@ export interface SlackMetadata {
   fileIds: number[]
   type: 'message' | 'file'
   channelId?: string
-  workspaceName?: string
 }
 
 type AuthToken = Awaited<ReturnType<typeof getAuthToken>>
@@ -165,7 +164,7 @@ export const SlackMessage = async (payload: PlatformJobPayload, env: Env): Promi
       db,
       payload.platformPostId,
       ts,
-      `https://${data.workspaceName}.slack.com/archives/${channelId}/p${ts.replace('.', '')}`,
+      `https://${token.profileName}.slack.com/archives/${channelId}/p${ts.replace('.', '')}`,
     )
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error)
@@ -185,7 +184,7 @@ export const SlackFile = async (payload: PlatformJobPayload, env: Env): Promise<
     const channelId = data.channelId ?? token.profileId ?? ''
 
     if (!channelId) throw new Error('No Slack channel ID specified')
-    if (!data.workspaceName) throw new Error('No Slack workspace name specified')
+    if (!token.profileName) throw new Error('No Slack workspace name specified')
 
     // Post caption first to get a real ts
     const ts = await postMessage(token, channelId, data.caption)
@@ -203,7 +202,7 @@ export const SlackFile = async (payload: PlatformJobPayload, env: Env): Promise<
       db,
       payload.platformPostId,
       ts,
-      `https://${data.workspaceName}.slack.com/archives/${channelId}/p${ts.replace('.', '')}`,
+      `https://${token.profileName}.slack.com/archives/${channelId}/p${ts.replace('.', '')}`,
     )
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error)

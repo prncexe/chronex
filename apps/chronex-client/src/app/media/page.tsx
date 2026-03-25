@@ -58,6 +58,49 @@ function truncateName(name: string, maxLen = 28): string {
   return `${base}...${ext}`
 }
 
+/**
+ * Custom hook: debounce a value by `delay` ms.
+ * Avoids filtering the entire media list on every keystroke.
+ */
+function useDebouncedValue<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = React.useState(value)
+  React.useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay)
+    return () => clearTimeout(id)
+  }, [value, delay])
+  return debounced
+}
+
+/**
+ * IntersectionObserver-based hook for lazy rendering.
+ * Returns a ref and a boolean indicating whether the element is (or was) visible.
+ * Once visible, stays visible (no unmounting).
+ */
+function useLazyVisible(rootMargin = '200px') {
+  const ref = React.useRef<HTMLDivElement>(null)
+  const [isVisible, setIsVisible] = React.useState(false)
+
+  React.useEffect(() => {
+    const el = ref.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true)
+          observer.disconnect() // once visible, stop observing
+        }
+      },
+      { rootMargin },
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [rootMargin])
+
+  return { ref, isVisible }
+}
+
 // ─── Preview Modal ────────────────────────────────────────────────────
 function PreviewModal({ item, onClose }: { item: MediaItem; onClose: () => void }) {
   // Close on Escape
@@ -148,65 +191,87 @@ function PreviewModal({ item, onClose }: { item: MediaItem; onClose: () => void 
 }
 
 // ─── Media Card (Grid) ────────────────────────────────────────────────
-function MediaCard({ item, onPreview }: { item: MediaItem; onPreview: (item: MediaItem) => void }) {
+const MediaCard = React.memo(function MediaCard({
+  item,
+  onPreview,
+}: {
+  item: MediaItem
+  onPreview: (item: MediaItem) => void
+}) {
+  const { ref, isVisible } = useLazyVisible('300px')
   const [imageLoaded, setImageLoaded] = React.useState(false)
   const isVideo = item.type === 'video'
 
   return (
     <div
+      ref={ref}
       className="group relative cursor-pointer overflow-hidden rounded-xl border border-border/50 bg-card transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
       onClick={() => onPreview(item)}
     >
       {/* thumbnail area */}
       <div className="relative aspect-square overflow-hidden bg-muted">
-        {!imageLoaded && (
+        {!isVisible ? (
+          /* Placeholder before intersection */
           <div className="absolute inset-0 flex items-center justify-center bg-muted">
-            <div className="flex flex-col items-center gap-2">
-              {isVideo ? (
-                <Film className="size-8 text-muted-foreground/40" />
-              ) : (
-                <ImageIcon className="size-8 text-muted-foreground/40" />
-              )}
-            </div>
-          </div>
-        )}
-
-        {isVideo ? (
-          <>
-            <video
-              src={item.url}
-              preload="metadata"
-              className={cn(
-                'size-full object-cover transition-all duration-500 group-hover:scale-105',
-                !imageLoaded && 'opacity-0',
-              )}
-              onLoadedData={() => setImageLoaded(true)}
-              muted
-            />
-            {/* play icon overlay */}
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20 transition-all duration-300 group-hover:bg-black/30">
-              <div className="flex size-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-all duration-300 group-hover:scale-110 group-hover:bg-white/30">
-                <Play className="ml-0.5 size-5 text-white" fill="white" />
-              </div>
-            </div>
-          </>
-        ) : (
-          <Image
-            src={item.url}
-            alt={item.name}
-            fill
-            className={cn(
-              'object-cover transition-all duration-500 group-hover:scale-105',
-              !imageLoaded && 'opacity-0',
+            {isVideo ? (
+              <Film className="size-8 text-muted-foreground/40" />
+            ) : (
+              <ImageIcon className="size-8 text-muted-foreground/40" />
             )}
-            onLoad={() => setImageLoaded(true)}
-            unoptimized
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-          />
+          </div>
+        ) : (
+          <>
+            {!imageLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center bg-muted">
+                <div className="flex flex-col items-center gap-2">
+                  {isVideo ? (
+                    <Film className="size-8 text-muted-foreground/40" />
+                  ) : (
+                    <ImageIcon className="size-8 text-muted-foreground/40" />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {isVideo ? (
+              <>
+                <video
+                  src={item.url}
+                  preload="metadata"
+                  className={cn(
+                    'size-full object-cover transition-all duration-500 group-hover:scale-105',
+                    !imageLoaded && 'opacity-0',
+                  )}
+                  onLoadedData={() => setImageLoaded(true)}
+                  muted
+                />
+                {/* play icon overlay */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 transition-all duration-300 group-hover:bg-black/30">
+                  <div className="flex size-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-all duration-300 group-hover:scale-110 group-hover:bg-white/30">
+                    <Play className="ml-0.5 size-5 text-white" fill="white" />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <Image
+                src={item.url}
+                alt={item.name}
+                fill
+                className={cn(
+                  'object-cover transition-all duration-500 group-hover:scale-105',
+                  !imageLoaded && 'opacity-0',
+                )}
+                onLoad={() => setImageLoaded(true)}
+                unoptimized
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                loading="lazy"
+              />
+            )}
+          </>
         )}
 
         {/* hover overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
         {/* hover action */}
         <div className="absolute right-2 bottom-2 flex items-center gap-1.5 opacity-0 transition-all duration-300 group-hover:opacity-100">
@@ -235,35 +300,54 @@ function MediaCard({ item, onPreview }: { item: MediaItem; onPreview: (item: Med
       </div>
     </div>
   )
-}
+})
 
 // ─── Media Row (List) ────────────────────────────────────────────────
-function MediaRow({ item, onPreview }: { item: MediaItem; onPreview: (item: MediaItem) => void }) {
+const MediaRow = React.memo(function MediaRow({
+  item,
+  onPreview,
+}: {
+  item: MediaItem
+  onPreview: (item: MediaItem) => void
+}) {
+  const { ref, isVisible } = useLazyVisible('200px')
   const isVideo = item.type === 'video'
 
   return (
     <div
+      ref={ref}
       className="group flex cursor-pointer items-center gap-4 rounded-xl border border-border/50 bg-card p-3 transition-all duration-200 hover:border-primary/30 hover:bg-accent/30"
       onClick={() => onPreview(item)}
     >
       {/* thumbnail */}
       <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-muted">
-        {isVideo ? (
-          <>
-            <video src={item.url} preload="metadata" className="size-full object-cover" muted />
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-              <Play className="size-4 text-white" fill="white" />
-            </div>
-          </>
+        {isVisible ? (
+          isVideo ? (
+            <>
+              <video src={item.url} preload="metadata" className="size-full object-cover" muted />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <Play className="size-4 text-white" fill="white" />
+              </div>
+            </>
+          ) : (
+            <Image
+              src={item.url}
+              alt={item.name}
+              fill
+              className="object-cover"
+              unoptimized
+              sizes="56px"
+              loading="lazy"
+            />
+          )
         ) : (
-          <Image
-            src={item.url}
-            alt={item.name}
-            fill
-            className="object-cover"
-            unoptimized
-            sizes="56px"
-          />
+          <div className="flex size-full items-center justify-center">
+            {isVideo ? (
+              <Film className="size-5 text-muted-foreground/40" />
+            ) : (
+              <ImageIcon className="size-5 text-muted-foreground/40" />
+            )}
+          </div>
         )}
       </div>
 
@@ -301,7 +385,7 @@ function MediaRow({ item, onPreview }: { item: MediaItem; onPreview: (item: Medi
       </Button>
     </div>
   )
-}
+})
 
 // ─── Empty State ──────────────────────────────────────────────────────
 function EmptyState({ filter }: { filter: FilterType }) {
@@ -340,15 +424,24 @@ export default function MediaPage() {
   const [previewItem, setPreviewItem] = React.useState<MediaItem | null>(null)
   const [showUpload, setShowUpload] = React.useState(false)
 
+  // Debounce search to avoid filtering on every keystroke
+  const debouncedSearch = useDebouncedValue(search, 200)
+
+  // Stable callback to avoid re-renders of memoized children
+  const handlePreview = React.useCallback((item: MediaItem) => {
+    setPreviewItem(item)
+  }, [])
+
   // filter & search
   const filteredMedia = React.useMemo(() => {
     if (!data) return []
     return data.filter((item) => {
       const matchesType = filter === 'all' || item.type === filter
-      const matchesSearch = !search || item.name.toLowerCase().includes(search.toLowerCase())
+      const matchesSearch =
+        !debouncedSearch || item.name.toLowerCase().includes(debouncedSearch.toLowerCase())
       return matchesType && matchesSearch
     })
-  }, [data, filter, search])
+  }, [data, filter, debouncedSearch])
 
   // counts
   const counts = React.useMemo(() => {
@@ -364,7 +457,7 @@ export default function MediaPage() {
     <>
       <div className="min-h-screen bg-background">
         {/* ── Header ──────────────────────────────────────────────── */}
-        <div className="border-b border-border/50 bg-gradient-to-b from-accent/30 to-background">
+        <div className="border-b border-border/50 bg-linear-to-b from-accent/30 to-background">
           <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
               <div>
@@ -399,14 +492,14 @@ export default function MediaPage() {
               </Button>
             </div>
 
-            {/* upload area */}
+            {/* upload area — centered on x-axis */}
             <div
               className={cn(
                 'grid transition-all duration-300',
                 showUpload ? 'mt-6 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
               )}
             >
-              <div className="overflow-hidden">
+              <div className="flex justify-center overflow-hidden">
                 <FileUpload />
               </div>
             </div>
@@ -511,13 +604,13 @@ export default function MediaPage() {
           ) : viewMode === 'grid' ? (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {filteredMedia.map((item) => (
-                <MediaCard key={item.id} item={item as MediaItem} onPreview={setPreviewItem} />
+                <MediaCard key={item.id} item={item as MediaItem} onPreview={handlePreview} />
               ))}
             </div>
           ) : (
             <div className="space-y-2">
               {filteredMedia.map((item) => (
-                <MediaRow key={item.id} item={item as MediaItem} onPreview={setPreviewItem} />
+                <MediaRow key={item.id} item={item as MediaItem} onPreview={handlePreview} />
               ))}
             </div>
           )}

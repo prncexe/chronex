@@ -1,5 +1,5 @@
 // "use client"
-import { Card, CardDescription, CardHeader, CardTitle, CardContent } from './ui/card'
+import { Card, CardHeader, CardTitle, CardContent } from './ui/card'
 import { connectMapper } from '@/lib/oauthMapper/connect'
 import { useDisconnectMapper } from '@/lib/oauthMapper/disconnect'
 import { PlatformId } from '@/config/platforms'

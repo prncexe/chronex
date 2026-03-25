@@ -7,7 +7,7 @@ import { cookies } from 'next/headers'
 export const createTRPCContext = async (opts: { headers: Headers }) => {
   const cookieStore = await cookies()
 
-  const workspaceId = cookieStore.get('workspaceId')?.value || opts.headers.get('x-workspace-id')
+  const workspaceId = cookieStore.get('workspaceId')?.value
 
   const session = await auth.api.getSession({
     headers: opts.headers,

@@ -18,7 +18,6 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
           headers() {
             return {
               'Content-Type': 'application/json',
-              'x-workspace-id': localStorage.getItem('workspaceId') || '',
             }
           },
         }),

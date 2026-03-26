@@ -60,9 +60,6 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex items-center px-4 py-3">
-          <span className="font-geist-sans text-xl font-bold tracking-tight">Chronex</span>
-        </div>
         <Workspace />
       </SidebarHeader>
       <SidebarContent>

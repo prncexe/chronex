@@ -3,12 +3,20 @@ import { trpc } from '@/utils/trpc'
 import OauthCard from '@/components/OauthCard'
 import type { PlatformId } from '@/config/platforms'
 import { redirect } from 'next/navigation'
+import { Spinner } from '@/components/ui/spinner'
 const page = () => {
-  const user = trpc.user.getUser.useQuery()
-  if (user.data?.workspaces.length === 0) {
+  const { data: user, isLoading } = trpc.user.getUser.useQuery()
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Spinner />
+      </div>
+    )
+  }
+  if (user?.workspaces.length === 0) {
     redirect('/workspace')
   }
-  const platforms = user.data?.authTokens.map((token) => token.platform)
+  const platforms = user?.authTokens.map((token) => token.platform)
   const Allplatforms = ['instagram', 'threads', 'linkedin', 'discord', 'slack'] as PlatformId[]
   return (
     <div className="flex flex-wrap gap-4 p-4">
@@ -17,6 +25,9 @@ const page = () => {
           key={platform}
           platformname={platform}
           isVerified={platforms?.includes(platform) || false}
+          username={
+            user?.authTokens.find((token) => token.platform === platform)?.profileName || ''
+          }
         />
       ))}
     </div>

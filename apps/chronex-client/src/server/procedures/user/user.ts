@@ -13,6 +13,7 @@ export const getUser = workspaceProcedure.query(async ({ ctx }) => {
           columns: {
             id: true,
             platform: true,
+            profileName: true,
           },
         },
         workspaces: {

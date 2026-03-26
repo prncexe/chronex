@@ -3,7 +3,11 @@ import z from 'zod'
 import type { NewAuthToken } from '@repo/db'
 import { authToken } from '@repo/db'
 
-import { THREADS_LONG_LIVED_TOKEN_URL, THREADS_PROFILE_URL, THREADS_SHORT_LIVED_TOKEN_URL } from '@/constants/url'
+import {
+  THREADS_LONG_LIVED_TOKEN_URL,
+  THREADS_PROFILE_URL,
+  THREADS_SHORT_LIVED_TOKEN_URL,
+} from '@/constants/url'
 import { exchangeCodeForShortLivedToken, exchangeForLongLivedToken } from './types'
 
 export const threadsOAuthProcedure = workspaceProcedure
@@ -23,16 +27,16 @@ export const threadsOAuthProcedure = workspaceProcedure
       accessToken: shortLivedToken.access_token,
       grantType: 'th_exchange_token',
     })
-const url = `${THREADS_PROFILE_URL}/v1.0/me?fields=id,username&access_token=${longLivedToken.access_token}`;
+    const url = `${THREADS_PROFILE_URL}/v1.0/me?fields=id,username&access_token=${longLivedToken.access_token}`
 
-    const response = await fetch(url);
+    const response = await fetch(url)
 
     if (!response.ok) {
-        const error = await response.json();
-        throw new Error(`Failed to fetch user ID: ${JSON.stringify(error)}`);
+      const error = await response.json()
+      throw new Error(`Failed to fetch user ID: ${JSON.stringify(error)}`)
     }
 
-    const data = await response.json();
+    const data = await response.json()
     const datadb: NewAuthToken = {
       accessToken: longLivedToken.access_token,
       expiresAt: new Date(Date.now() + longLivedToken.expires_in * 1000),
@@ -40,7 +44,7 @@ const url = `${THREADS_PROFILE_URL}/v1.0/me?fields=id,username&access_token=${lo
       userId: ctx.user.id,
       workspaceId: ctx.workspaceId,
       profileId: data.id,
-      profileName:data.username,
+      profileName: data.username,
       isRefreshable: true,
     }
     await ctx.db.insert(authToken).values(datadb)

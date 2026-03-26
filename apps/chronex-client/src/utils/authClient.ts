@@ -4,4 +4,3 @@ import { getBaseUrl } from './getBaseUrl'
 export const authClient = createAuthClient({
   baseURL: getBaseUrl(),
 })
-  

@@ -1,6 +1,6 @@
-@import "tailwindcss";
-@source "../**/*.{ts,tsx}";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@source '../**/*.{ts,tsx}';
+@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -125,5 +125,67 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+@keyframes chronexFloatA {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -12px, 0);
+  }
+}
+
+@keyframes chronexFloatB {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(10px, -10px, 0);
+  }
+}
+
+@keyframes chronexPulse {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+.chronex-panel {
+  animation: chronexPulse 10s ease-in-out infinite;
+}
+
+.chronex-float {
+  animation: chronexFloatA 7s ease-in-out infinite;
+}
+
+.chronex-orb-a {
+  animation: chronexFloatA 11s ease-in-out infinite;
+}
+
+.chronex-orb-b {
+  animation: chronexFloatB 14s ease-in-out infinite;
+}
+
+.chronex-orb-c {
+  animation: chronexFloatA 16s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chronex-panel,
+  .chronex-float,
+  .chronex-orb-a,
+  .chronex-orb-b,
+  .chronex-orb-c {
+    animation: none;
   }
 }

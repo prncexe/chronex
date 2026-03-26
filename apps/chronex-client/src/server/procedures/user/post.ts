@@ -2,15 +2,15 @@ import { workspaceProcedure } from '@/server/trpc'
 import { z } from 'zod'
 import { b2 } from '@/config/backBlaze'
 import { TRPCError } from '@trpc/server'
-import { post, postMedia } from '@repo/db'
+import { post, postMedia, platformPosts } from '@repo/db'
 import type { NewPlatformPost } from '@repo/db'
-import { platformPosts } from '@repo/db'
 import type { NewPostMedia } from '@repo/db'
 import { fileInfo } from '@/types/zod/file'
 import { InputSchema } from '@/types/zod/platform'
 import { getMetaData } from '@/utils/fileFetch'
 import { validateMediaForPlatform } from '@/lib/media-validation/validator'
 import { queuePlatformJob } from '@/config/cloudflareQueue'
+import { and, count, desc, eq } from 'drizzle-orm'
 function gcd(a: number, b: number): number {
   return b === 0 ? a : gcd(b, a % b)
 }
@@ -163,3 +163,78 @@ export const createPost = workspaceProcedure.input(InputSchema).mutation(async (
     })
   }
 })
+
+export const getUserPosts = workspaceProcedure
+  .input(
+    z.object({
+      page: z.number().int().min(1).default(1),
+      pageSize: z.number().int().min(1).max(20).default(5),
+    }),
+  )
+  .query(async ({ ctx, input }) => {
+    try {
+      const page = input.page
+      const pageSize = input.pageSize
+      const whereClause = and(
+        eq(post.workspaceId, ctx.workspaceId),
+        eq(post.createdBy, ctx.user.id),
+      )
+
+      const [{ totalItems }] = await ctx.db
+        .select({ totalItems: count() })
+        .from(post)
+        .where(whereClause)
+
+      const posts = await ctx.db.query.post.findMany({
+        where: (posts, { and, eq }) =>
+          and(eq(posts.workspaceId, ctx.workspaceId), eq(posts.createdBy, ctx.user.id)),
+        with: {
+          platformPosts: {
+            columns: {
+              id: true,
+              platform: true,
+              status: true,
+              scheduledAt: true,
+              publishedAt: true,
+              postUrl: true,
+              errorMessage: true,
+              metadata: true,
+            },
+            orderBy: (platformPost, { asc }) => [asc(platformPost.platform)],
+          },
+        },
+        orderBy: (posts, { desc }) => [desc(posts.createdAt)],
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
+        columns: {
+          id: true,
+          refName: true,
+          status: true,
+          platforms: true,
+          content: true,
+          scheduledAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      })
+
+      return {
+        items: posts.map((item) => ({
+          ...item,
+          mediaCount: item.content.length,
+          platformCount: item.platformPosts.length,
+        })),
+        page,
+        pageSize,
+        totalItems,
+        totalPages: Math.max(1, Math.ceil(totalItems / pageSize)),
+      }
+    } catch (error) {
+      console.log('Error in getUserPosts:', error)
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to get user posts',
+        cause: error,
+      })
+    }
+  })

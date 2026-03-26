@@ -1,21 +1,21 @@
-import SlackIcon from "@/components/logo/slack";
-import InstagramIcon from "@/components/logo/instagram";
-import ThreadsLogoIcon from "@/components/logo/threads";
-import DiscordIcon from "@/components/logo/discord";
-import LinkedinIcon from "@/components/logo/linkedin";
-import { PlatformId } from "@/config/platforms";
+import SlackIcon from '@/components/logo/slack'
+import InstagramIcon from '@/components/logo/instagram'
+import ThreadsLogoIcon from '@/components/logo/threads'
+import DiscordIcon from '@/components/logo/discord'
+import LinkedinIcon from '@/components/logo/linkedin'
+import { PlatformId } from '@/config/platforms'
 
 type BaseIconProps = {
-  size?: number;
-  color?: string;
-  background?: string;
-  opacity?: number;
-  rotation?: number;
-  shadow?: number;
-  flipHorizontal?: boolean;
-  flipVertical?: boolean;
-  padding?: number;
-};
+  size?: number
+  color?: string
+  background?: string
+  opacity?: number
+  rotation?: number
+  shadow?: number
+  flipHorizontal?: boolean
+  flipVertical?: boolean
+  padding?: number
+}
 
 const logoMapping: Record<PlatformId, React.ComponentType<BaseIconProps>> = {
   linkedin: LinkedinIcon,
@@ -23,15 +23,12 @@ const logoMapping: Record<PlatformId, React.ComponentType<BaseIconProps>> = {
   instagram: InstagramIcon,
   threads: ThreadsLogoIcon,
   discord: DiscordIcon,
-};
+}
 
-export default function IconRenderer({
-  name,
-  ...props
-}: { name: PlatformId } & BaseIconProps) {
-  const IconComponent = logoMapping[name];
+export default function IconRenderer({ name, ...props }: { name: PlatformId } & BaseIconProps) {
+  const IconComponent = logoMapping[name]
 
-  if (!IconComponent) return null;
+  if (!IconComponent) return null
 
-  return <IconComponent {...props} />;
+  return <IconComponent {...props} />
 }

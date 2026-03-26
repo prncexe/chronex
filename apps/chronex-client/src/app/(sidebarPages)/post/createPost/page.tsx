@@ -23,7 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useRouter } from 'next/navigation'
 import { Calendar } from '@/components/ui/calendar'
 import { format } from 'date-fns'
 
@@ -204,7 +203,7 @@ const MediaPicker = React.memo(function MediaPicker({
       ) : filtered.length === 0 ? (
         <p className="py-6 text-center text-xs text-muted-foreground">No matching media found</p>
       ) : (
-        <ScrollArea className="h-[200px]">
+        <ScrollArea className="h-50">
           <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6">
             {filtered.map((item) => {
               const id = String(item.id)
@@ -624,7 +623,7 @@ function buildPlatformPayload(pd: PlatformFormData): Record<string, unknown> {
 
 // ─── Main Page ────────────────────────────────────────────────────────
 export default function CreatePostForm() {
-  const router = useRouter()
+  const utils = trpc.useUtils()
 
   const { data: media, isLoading: mediaLoading } = trpc.user.getMedia.useQuery()
   const { data: userData, isLoading: userLoading } = trpc.user.getUser.useQuery()
@@ -795,14 +794,8 @@ export default function CreatePostForm() {
         scheduledAt: fullScheduledAt,
         platformdata: platformdata as platformSchema,
       })
+      await utils.post.getUserPosts.invalidate()
       toast.success('Post created successfully')
-      // setTitle('')
-      // setScheduledAt(formatDateForInput(new Date(Date.now())))
-      // setSelectedPlatforms(new Set())
-      // setPlatformData(new Map())
-      // setErrors([])
-      // setUnifiedCaption('')
-      router.push('/post')
     } catch (err) {
       setErrors([err instanceof Error ? err.message : 'Failed to create post'])
     } finally {
@@ -1053,7 +1046,7 @@ export default function CreatePostForm() {
                         type="button"
                         onClick={() => setTimeAmPm('AM')}
                         className={cn(
-                          'cursor-pointer rounded-tr-sm px-1.5 py-[3px] text-[9px] leading-none font-bold',
+                          'cursor-pointer rounded-tr-sm px-1.5 py-0.75 text-[9px] leading-none font-bold',
                           timeAmPm === 'AM'
                             ? 'bg-primary text-primary-foreground'
                             : 'text-muted-foreground hover:bg-muted',
@@ -1065,7 +1058,7 @@ export default function CreatePostForm() {
                         type="button"
                         onClick={() => setTimeAmPm('PM')}
                         className={cn(
-                          'cursor-pointer rounded-br-sm px-1.5 py-[3px] text-[9px] leading-none font-bold',
+                          'cursor-pointer rounded-br-sm px-1.5 py-0.75 text-[9px] leading-none font-bold',
                           timeAmPm === 'PM'
                             ? 'bg-primary text-primary-foreground'
                             : 'text-muted-foreground hover:bg-muted',

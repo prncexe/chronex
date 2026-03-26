@@ -15,25 +15,23 @@ export default function LoginPage() {
   const [isLoginPending, startTransition] = useTransition()
 
   useEffect(() => {
-    if (!isSessionPending && session?.user) {
-      router.replace('/')
+    if (!isSessionPending && session?.user && !isLoginPending) {
+      toast.warning('You are already logged in')
+      router.replace('/tokens')
     }
-  }, [session, isSessionPending, router])
-
+  }, [session, isSessionPending, isLoginPending, router])
   const handleLogin = (value: 'github' | 'google') => {
     startTransition(async () => {
       try {
         await authClient.signIn.social({
           provider: value,
-          callbackURL: '/',
+          callbackURL: '/post',
         })
       } catch (err) {
         console.error(err)
         toast.error('Login failed')
       } finally {
-        toast.success('Login successful')
-        router.refresh()
-        router.replace('/tokens')
+        toast.success('Login successful, redirect to dashboard')
       }
     })
   }

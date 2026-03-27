@@ -2,7 +2,7 @@ import React from 'react'
 
 const SlackIcon = ({
   size = 25,
-  color = '#000000',
+  color = 'currentColor',
   strokeWidth = 2,
   background = 'transparent',
   opacity = 1,

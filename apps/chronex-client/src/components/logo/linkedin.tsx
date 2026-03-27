@@ -1,6 +1,6 @@
 const LinkedinIcon = ({
   size = 25,
-  color = '#000000',
+  color = 'currentColor',
   background = 'transparent',
   opacity = 1,
   rotation = 0,

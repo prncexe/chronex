@@ -6,6 +6,7 @@ import { AppSidebar } from '@/components/appSidebar'
 import { authClient } from '@/utils/authClient'
 import { Spinner } from '@/components/ui/spinner'
 import { BrandName } from '@/components/logo/brandName'
+import { ThemeToggle } from '@/components/themeToggle'
 import { UserMenu } from '@/components/userMenu'
 
 export default function SidebarLayout({
@@ -55,6 +56,7 @@ export default function SidebarLayout({
             </div>
 
             <div className="flex items-center gap-3">
+              <ThemeToggle />
               {isPending ? (
                 <div className="flex size-10 items-center justify-center rounded-full border border-border/70 bg-card">
                   <Spinner />

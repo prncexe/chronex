@@ -5,6 +5,7 @@ import { motion } from 'motion/react'
 import { ArrowRight, CalendarClock, Layers3, ShieldCheck, ArrowUpRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BrandName } from '@/components/logo/brandName'
+import { ThemeToggle } from '@/components/themeToggle'
 import IconRenderer from '@/lib/logoMapping'
 import { PlatformId } from '@/config/platforms'
 
@@ -104,7 +105,7 @@ export default function HomePage() {
         .feature-row:hover { background: hsl(var(--muted)/.55); }
       `}</style>
 
-      <main className="relative min-h-screen overflow-x-hidden bg-background">
+      <main className="relative min-h-screen bg-background">
         {/* ── Ambient ── */}
         <div
           aria-hidden
@@ -112,15 +113,14 @@ export default function HomePage() {
         />
 
         {/* ── Header ── */}
-        <header className="relative z-20 border-b border-border/80 bg-background/85 backdrop-blur-md">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4.5">
-            {/* Logo */}
+        <header className="sticky top-0 left-0 z-50 border-b border-border/80 bg-background/85 backdrop-blur-md">
+          <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
             <Link href="/" className="brand-wrap">
               <BrandName />
             </Link>
 
-            {/* Actions */}
             <div className="flex items-center gap-2">
+              <ThemeToggle />
               <Button
                 asChild
                 variant="ghost"

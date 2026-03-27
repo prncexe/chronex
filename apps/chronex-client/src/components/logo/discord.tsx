@@ -1,6 +1,6 @@
 const DiscordIcon = ({
   size = 25,
-  color = '#000000',
+  color = 'currentColor',
   opacity = 1,
   rotation = 0,
   shadow = 0,

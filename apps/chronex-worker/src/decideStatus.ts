@@ -3,7 +3,7 @@ import { updatePostStatus } from './utils/updatePostStatus'
 export async function decideStatus(
   db: DB,
   postId: number,
-  _currentPlatform: 'instagram' | 'linkedin' | 'threads' | 'discord' | 'slack',
+  _currentPlatform: 'instagram' | 'linkedin' | 'threads' | 'discord' | 'slack' | 'telegram',
 ) {
   const postData = await db.query.post.findFirst({
     where: (t, { eq }) => eq(t.id, postId),

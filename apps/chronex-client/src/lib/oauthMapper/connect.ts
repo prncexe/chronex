@@ -34,12 +34,16 @@ const getSlackAuthUrl = () => {
   const authUrl = `https://slack.com/oauth/v2/authorize?client_id=${clientId}&user_scope=${userScopes}&redirect_uri=${redirectUri}`
   return authUrl
 }
+const getTelegramAuthUrl = () => {
+  return '/telegram'
+}
 const connectMapper: Record<PlatformId, () => string> = {
   instagram: getInstaAuthUrl,
   threads: getThreadsAuthUrl,
   linkedin: getLinkedinAuthUrl,
   discord: getDiscordAuthUrl,
   slack: getSlackAuthUrl,
+  telegram: getTelegramAuthUrl,
 }
 
 export { connectMapper }

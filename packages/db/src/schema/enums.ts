@@ -25,6 +25,7 @@ export const platformEnum = pgEnum('platform', [
   'threads',
   'slack',
   'discord',
+  'telegram',
 ])
 
 //use this for future reference if we want to add platform-specific enums

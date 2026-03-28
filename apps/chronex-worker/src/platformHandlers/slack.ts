@@ -190,7 +190,7 @@ export const SlackFile = async (payload: PlatformJobPayload, env: Env): Promise<
     const ts = await postMessage(token, channelId, data.caption)
 
     // Upload files into the same channel
-    const mediaItems = await fetchMediaMany(db, data.fileIds)
+    const mediaItems = await fetchMediaMany(db, data.fileIds, env)
     for (let i = 0; i < mediaItems.length; i++) {
       const item = mediaItems[i]!
       const urlPath = new URL(item.url).pathname

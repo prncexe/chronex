@@ -21,10 +21,12 @@ function waitForPopupClose(popup: Window) {
 const OauthCard = ({
   platformname,
   isVerified,
+  isPending = false,
   username,
 }: {
   platformname: PlatformId
   isVerified: boolean
+  isPending?: boolean
   username: string
 }) => {
   const [isLoading, setIsLoading] = useState(false)
@@ -71,17 +73,21 @@ const OauthCard = ({
                 {platformname}
               </CardTitle>
               <CardDescription className="text-xs">
-                {isVerified ? 'Connected' : 'Not connected'}
+                {isVerified ? 'Connected' : isPending ? 'Setup incomplete' : 'Not connected'}
               </CardDescription>
             </div>
           </div>
 
           <div
             className={`rounded-full border px-2.5 py-1 text-xs font-medium ${
-              isVerified ? 'border-primary/30 bg-primary/10 text-primary' : 'bg-background'
+              isVerified
+                ? 'border-primary/30 bg-primary/10 text-primary'
+                : isPending
+                  ? 'border-amber-300/40 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                  : 'bg-background'
             }`}
           >
-            {isVerified ? 'Active' : 'Idle'}
+            {isVerified ? 'Active' : isPending ? 'Pending' : 'Idle'}
           </div>
         </div>
 
@@ -97,7 +103,13 @@ const OauthCard = ({
           onClick={isVerified ? handleDisconnect : handleConnect}
           disabled={isLoading}
         >
-          {isLoading ? 'Please wait...' : isVerified ? 'Disconnect' : 'Connect'}
+          {isLoading
+            ? 'Please wait...'
+            : isVerified
+              ? 'Disconnect'
+              : isPending
+                ? 'Finish setup'
+                : 'Connect'}
         </Button>
       </CardContent>
     </Card>

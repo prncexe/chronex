@@ -105,13 +105,16 @@ const instagramVideoItem = instagramVideoBase
 // ─── Per-type rules (each validates the array of file metadata) ───────────────
 
 /** Single image post */
-const image = z.array(instagramImageItem)
+const image = z.array(instagramImageItem).length(1, 'Instagram image posts require exactly 1 image')
 
 /** Reel — single 9:16 video */
-const reel = z.array(instagramVideoItem)
+const reel = z.array(instagramVideoItem).length(1, 'Instagram reels require exactly 1 video')
 
 /** Carousel — 2–10 images or videos (no strict 9:16 requirement) */
-const carousel = z.array(z.union([instagramImageBase, instagramVideoBase]))
+const carousel = z
+  .array(z.union([instagramImageBase, instagramVideoBase]))
+  .min(2, 'Instagram carousels require at least 2 media items')
+  .max(10, 'Instagram carousels support up to 10 media items')
 
 /** Story — single image or short video */
 const story = z

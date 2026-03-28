@@ -5,14 +5,23 @@ import {
   threads,
   slack,
   discord,
+  telegram,
 } from '@/lib/media-validation/platform-rules/combined'
-export const platformSchema = z.enum(['discord', 'slack', 'linkedin', 'instagram', 'threads'])
+export const platformSchema = z.enum([
+  'discord',
+  'slack',
+  'linkedin',
+  'instagram',
+  'threads',
+  'telegram',
+])
 const platformDataSchema = z.discriminatedUnion('platform', [
   instagram,
   linkedin,
   threads,
   slack,
   discord,
+  telegram,
 ])
 const PlatformDataArraySchema = z.array(platformDataSchema)
 

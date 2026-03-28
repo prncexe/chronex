@@ -3,7 +3,7 @@ import { createDb, workspace, platformPosts, post, eq, and, lte, inArray } from 
 export interface PlatformJobPayload {
   postId: number
   platformPostId: number
-  platform: 'instagram' | 'linkedin' | 'threads' | 'discord' | 'slack'
+  platform: 'instagram' | 'linkedin' | 'threads' | 'discord' | 'slack' | 'telegram'
   workspaceId: number
   scheduledAt: string
   metadata?: unknown
@@ -19,6 +19,8 @@ export interface Env {
   CHRONEX_QUEUE_PRODUCER: Queue
   DISCORD_WEBHOOK_NAME: string
   DISCORD_WEBHOOK_AVATAR_URL: string
+  B2_BUCKET_ID: string
+  B2_DOWNLOAD_URL: string
 }
 
 import {
@@ -45,6 +47,12 @@ import {
 import { DiscordMessage, DiscordEmbed, DiscordFile } from './platformHandlers/discord'
 
 import { SlackMessage, SlackFile } from './platformHandlers/slack'
+import {
+  TelegramMessage,
+  TelegramPhoto,
+  TelegramVideo,
+  TelegramMediaGroup,
+} from './platformHandlers/telegram'
 import { decideStatus } from './decideStatus'
 
 type PostHandler = (payload: PlatformJobPayload, env: Env) => Promise<void>
@@ -76,6 +84,12 @@ const handlerRegistry: Record<string, Record<string, PostHandler>> = {
   slack: {
     message: SlackMessage,
     file: SlackFile,
+  },
+  telegram: {
+    message: TelegramMessage,
+    photo: TelegramPhoto,
+    video: TelegramVideo,
+    mediaGroup: TelegramMediaGroup,
   },
 }
 

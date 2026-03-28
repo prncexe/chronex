@@ -3,3 +3,4 @@ export { LinkedInText, LinkedInImage, LinkedInVideo, LinkedInMultiPost } from '.
 export { ThreadsText, ThreadsImage, ThreadsVideo, ThreadsCarousel } from './threads'
 export { DiscordMessage, DiscordEmbed, DiscordFile } from './discord'
 export { SlackMessage, SlackFile } from './slack'
+export { TelegramMessage, TelegramPhoto, TelegramVideo, TelegramMediaGroup } from './telegram'

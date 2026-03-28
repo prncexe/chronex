@@ -245,7 +245,7 @@ export const LinkedInImage = async (payload: PlatformJobPayload, env: Env): Prom
     await markProcessing(db, payload.platformPostId)
 
     const token = await getAuthToken(db, payload.workspaceId, 'linkedin')
-    const media = await fetchMedia(db, data.fileIds[0] ?? 0)
+    const media = await fetchMedia(db, data.fileIds[0] ?? 0, env)
 
     const { uploadUrl, imageUrn } = await initImageUpload(token)
 
@@ -289,7 +289,7 @@ export const LinkedInVideo = async (payload: PlatformJobPayload, env: Env): Prom
 
     const token = await getAuthToken(db, payload.workspaceId, 'linkedin')
 
-    const media = await fetchMedia(db, data.fileIds[0] ?? 0)
+    const media = await fetchMedia(db, data.fileIds[0] ?? 0, env)
 
     const headRes = await fetch(media.url, { method: 'HEAD' })
 
@@ -356,7 +356,7 @@ export const LinkedInMultiPost = async (payload: PlatformJobPayload, env: Env): 
     await markProcessing(db, payload.platformPostId)
 
     const token = await getAuthToken(db, payload.workspaceId, 'linkedin')
-    const mediaItems = await fetchMediaMany(db, data.fileIds)
+    const mediaItems = await fetchMediaMany(db, data.fileIds, env)
 
     const imageUrns: string[] = []
     for (const item of mediaItems) {

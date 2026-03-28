@@ -3,7 +3,7 @@
  * Used to drive platform & content-type selection UI.
  */
 
-export type PlatformId = 'instagram' | 'linkedin' | 'threads' | 'slack' | 'discord'
+export type PlatformId = 'instagram' | 'linkedin' | 'threads' | 'slack' | 'discord' | 'telegram'
 
 export interface ContentType {
   id: string
@@ -159,6 +159,40 @@ export const PLATFORM_CONFIG: PlatformConfig[] = [
         label: 'File upload',
         requiresMedia: true,
         minMedia: 1,
+        maxMedia: 10,
+      },
+    ],
+  },
+  {
+    id: 'telegram',
+    label: 'Telegram',
+    contentTypes: [
+      {
+        id: 'message',
+        label: 'Message',
+        requiresMedia: false,
+        minMedia: 0,
+        maxMedia: 0,
+      },
+      {
+        id: 'photo',
+        label: 'Photo',
+        requiresMedia: true,
+        minMedia: 1,
+        maxMedia: 1,
+      },
+      {
+        id: 'video',
+        label: 'Video',
+        requiresMedia: true,
+        minMedia: 1,
+        maxMedia: 1,
+      },
+      {
+        id: 'mediaGroup',
+        label: 'Album',
+        requiresMedia: true,
+        minMedia: 2,
         maxMedia: 10,
       },
     ],

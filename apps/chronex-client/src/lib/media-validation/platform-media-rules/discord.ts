@@ -21,7 +21,10 @@ const discordFileItem = z.object({
 // ─── Per-type rules ───────────────────────────────────────────────────────────
 
 /** File-only upload (1–10 files) */
-const file = z.array(discordFileItem)
+const file = z
+  .array(discordFileItem)
+  .min(1, 'Discord file uploads require at least 1 file')
+  .max(10, 'Discord supports up to 10 attachments')
 
 // ─── Exported map ─────────────────────────────────────────────────────────────
 export const discord = { file }

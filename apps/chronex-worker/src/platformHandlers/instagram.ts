@@ -137,7 +137,7 @@ export const InstagramImage = async (payload: PlatformJobPayload, env: Env): Pro
     await markProcessing(db, payload.platformPostId)
 
     const data = payload.metadata as MetaDataSchema
-    const media = await fetchMedia(db, data.fileIds[0] ?? 0)
+    const media = await fetchMedia(db, data.fileIds[0] ?? 0, env)
     const container = await createContainer(token, {
       image_url: media.url,
       caption: data.caption,
@@ -186,7 +186,7 @@ export const InstagramReel = async (payload: PlatformJobPayload, env: Env): Prom
 
     await markProcessing(db, payload.platformPostId)
 
-    const media = await fetchMedia(db, data.fileIds[0] ?? 0)
+    const media = await fetchMedia(db, data.fileIds[0] ?? 0, env)
     const container = await createContainer(token, {
       video_url: media.url,
       caption: data.caption,
@@ -261,7 +261,7 @@ export const InstagramCarousel = async (payload: PlatformJobPayload, env: Env): 
 
     await markProcessing(db, payload.platformPostId)
 
-    const mediaItems = await fetchMediaMany(db, data.fileIds)
+    const mediaItems = await fetchMediaMany(db, data.fileIds, env)
     const childIds: string[] = []
 
     for (const item of mediaItems) {
@@ -321,7 +321,7 @@ export const InstagramStory = async (payload: PlatformJobPayload, env: Env): Pro
 
     await markProcessing(db, payload.platformPostId)
 
-    const media = await fetchMedia(db, data.fileIds[0] ?? 0)
+    const media = await fetchMedia(db, data.fileIds[0] ?? 0, env)
     const isVideo = media.type === 'video'
 
     const probe = await fetch(media.url, { method: 'HEAD' })

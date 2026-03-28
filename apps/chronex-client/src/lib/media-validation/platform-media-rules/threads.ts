@@ -54,7 +54,10 @@ const imageItem = z
   )
 
 /** 1–10 images */
-const image = z.array(imageItem)
+const image = z
+  .array(imageItem)
+  .min(1, 'Threads image posts require at least 1 image')
+  .max(10, 'Threads image posts support up to 10 images')
 
 /** Single video item schema */
 const videoItem = z
@@ -86,7 +89,7 @@ const videoItem = z
   )
 
 /** Single video */
-const video = z.array(videoItem)
+const video = z.array(videoItem).length(1, 'Threads video posts require exactly 1 video')
 
 const carousel = z
   .array(z.union([imageItem, videoItem]))

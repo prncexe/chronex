@@ -3,6 +3,7 @@ import InstagramIcon from '@/components/logo/instagram'
 import ThreadsLogoIcon from '@/components/logo/threads'
 import DiscordIcon from '@/components/logo/discord'
 import LinkedinIcon from '@/components/logo/linkedin'
+import TelegramLogoIcon from '@/components/logo/telegram'
 import { PlatformId } from '@/config/platforms'
 
 type BaseIconProps = {
@@ -23,6 +24,7 @@ const logoMapping: Record<PlatformId, React.ComponentType<BaseIconProps>> = {
   instagram: InstagramIcon,
   threads: ThreadsLogoIcon,
   discord: DiscordIcon,
+  telegram: TelegramLogoIcon,
 }
 
 export default function IconRenderer({ name, ...props }: { name: PlatformId } & BaseIconProps) {

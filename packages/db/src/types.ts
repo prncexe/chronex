@@ -3,6 +3,7 @@ import { workspace } from './schema/workspace'
 import { authToken } from './schema/auth-token'
 import { post, postMedia } from './schema/posts'
 import { platformPosts } from './schema/platform-posts'
+import { telegramChannels } from './schema/telegram-channels'
 
 // Type exports for better type inference
 export type Workspace = InferSelectModel<typeof workspace>
@@ -19,6 +20,9 @@ export type NewPostMedia = InferInsertModel<typeof postMedia>
 
 export type PlatformPost = InferSelectModel<typeof platformPosts>
 export type NewPlatformPost = InferInsertModel<typeof platformPosts>
+
+export type TelegramChannel = InferSelectModel<typeof telegramChannels>
+export type NewTelegramChannel = InferInsertModel<typeof telegramChannels>
 
 // use these types in your application for better type safety and autocompletion when working with the database models.
 

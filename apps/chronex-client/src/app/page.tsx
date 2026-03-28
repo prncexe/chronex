@@ -16,6 +16,7 @@ const PLATFORMS: Array<{ name: PlatformId; color: string }> = [
   { name: 'linkedin', color: '#0A66C2' },
   { name: 'slack', color: '#E01E5A' },
   { name: 'discord', color: '#5865F2' },
+  { name: 'telegram', color: '#0088cc' },
 ]
 
 const SCHEDULE = [

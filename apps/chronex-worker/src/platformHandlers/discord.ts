@@ -297,7 +297,7 @@ export const DiscordFile = async (payload: PlatformJobPayload, env: Env): Promis
     webhookId = webhook.webhookId
     webhookToken = webhook.webhookToken
 
-    const mediaItems = await fetchMediaMany(db, data.fileIds)
+    const mediaItems = await fetchMediaMany(db, data.fileIds, env)
 
     // Build lightweight file descriptors — no binary download, just URLs
     const files = mediaItems.map((item, idx) => {

@@ -52,7 +52,10 @@ const slackFileItem = z.object({
 /** Message with optional file attachments (1–10) */
 
 /** File-only upload (1–10 files) */
-const file = z.array(slackFileItem)
+const file = z
+  .array(slackFileItem)
+  .min(1, 'Slack file uploads require at least 1 file')
+  .max(10, 'Slack file uploads support up to 10 files')
 
 // ─── Exported map ─────────────────────────────────────────────────────────────
 export const slack = { file }

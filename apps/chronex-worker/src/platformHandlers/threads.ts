@@ -144,7 +144,7 @@ export const ThreadsImage = async (payload: PlatformJobPayload, env: Env): Promi
     await markProcessing(db, payload.platformPostId)
 
     const token = await getAuthToken(db, payload.workspaceId, 'threads')
-    const media = await fetchMedia(db, data.fileIds[0] ?? 0)
+    const media = await fetchMedia(db, data.fileIds[0] ?? 0, env)
 
     const container = await createContainer(token, {
       media_type: 'IMAGE',
@@ -210,7 +210,7 @@ export const ThreadsVideo = async (payload: PlatformJobPayload, env: Env): Promi
 
     await markProcessing(db, payload.platformPostId)
 
-    const media = await fetchMedia(db, data.fileIds[0] ?? 0)
+    const media = await fetchMedia(db, data.fileIds[0] ?? 0, env)
 
     const container = await createContainer(token, {
       media_type: 'VIDEO',
@@ -286,7 +286,7 @@ export const ThreadsCarousel = async (payload: PlatformJobPayload, env: Env): Pr
     }
 
     await markProcessing(db, payload.platformPostId)
-    const media = await fetchMediaMany(db, data.fileIds)
+    const media = await fetchMediaMany(db, data.fileIds, env)
 
     const childContainerIds: string[] = []
     for (const item of media) {

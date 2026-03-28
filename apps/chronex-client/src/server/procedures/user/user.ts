@@ -24,7 +24,18 @@ export const getUser = workspaceProcedure.query(async ({ ctx }) => {
         },
       },
     })
-    return user
+    const telegramChannels = await ctx.db.query.telegramChannels.findMany({
+      where: (channel, { and, eq }) =>
+        and(eq(channel.workspaceId, ctx.workspaceId), eq(channel.isActive, true)),
+      columns: {
+        id: true,
+      },
+    })
+
+    return {
+      ...user,
+      telegramChannelCount: telegramChannels.length,
+    }
   } catch (error) {
     console.log(error)
     throw new TRPCError({

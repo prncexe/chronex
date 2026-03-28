@@ -15,6 +15,27 @@ function gcd(a: number, b: number): number {
   return b === 0 ? a : gcd(b, a % b)
 }
 
+function getValidatedB2DownloadUrl(): string {
+  const rawBaseUrl = process.env.B2_DOWNLOAD_URL
+
+  if (!rawBaseUrl) {
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'B2_DOWNLOAD_URL is not configured',
+    })
+  }
+
+  try {
+    const normalized = new URL(rawBaseUrl)
+    return normalized.toString().replace(/\/$/, '')
+  } catch {
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: `B2_DOWNLOAD_URL is invalid: ${rawBaseUrl}`,
+    })
+  }
+}
+
 export const getUploadUrl = workspaceProcedure.query(async () => {
   try {
     await b2.authorize()
@@ -42,7 +63,8 @@ export const saveMedia = workspaceProcedure
     try {
       await b2.authorize()
       const info = await b2.getFileInfo({ fileId: input.fileId }).then((res) => res.data)
-      const fileUrl = `${process.env.B2_DOWNLOAD_URL}/b2api/v3/b2_download_file_by_id?fileId=${input.fileId}`
+      const b2DownloadUrl = getValidatedB2DownloadUrl()
+      const fileUrl = `${b2DownloadUrl}/b2api/v3/b2_download_file_by_id?fileId=${input.fileId}`
       const typeandExtension = info.contentType.split('/')
       const mediaRecord: NewPostMedia = {
         workspaceId: ctx.workspaceId,

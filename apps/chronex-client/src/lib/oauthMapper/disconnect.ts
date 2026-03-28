@@ -7,6 +7,7 @@ export function useDisconnectMapper(): Record<PlatformId, () => Promise<{ succes
   const linkedin = trpc.disconnect.linkedin.useMutation()
   const discord = trpc.disconnect.discord.useMutation()
   const slack = trpc.disconnect.slack.useMutation()
+  const telegram = trpc.disconnect.telegram.useMutation()
 
   return {
     instagram: () => instagram.mutateAsync(),
@@ -14,5 +15,6 @@ export function useDisconnectMapper(): Record<PlatformId, () => Promise<{ succes
     linkedin: () => linkedin.mutateAsync(),
     discord: () => discord.mutateAsync(),
     slack: () => slack.mutateAsync(),
+    telegram: () => telegram.mutateAsync(),
   }
 }

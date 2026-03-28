@@ -1,4 +1,5 @@
 import { Buffer } from 'node:buffer'
+import type { Env } from '../index'
 
 const BACKBLAZE_CREDENTIALS = {
   applicationKeyId: 'ffbf175d7c5c',
@@ -19,6 +20,21 @@ interface B2AuthResponse {
 
 interface B2DownloadAuthResponse {
   authorizationToken: string
+}
+
+function getValidatedB2BaseUrls(env: Pick<Env, 'B2_DOWNLOAD_URL'>) {
+  const rawDownloadUrl = env.B2_DOWNLOAD_URL
+
+  if (!rawDownloadUrl) {
+    throw new Error('B2_DOWNLOAD_URL is not configured')
+  }
+
+  try {
+    const normalizedDownloadUrl = new URL(rawDownloadUrl).toString().replace(/\/$/, '')
+    return { downloadUrl: normalizedDownloadUrl }
+  } catch {
+    throw new Error(`B2_DOWNLOAD_URL is invalid: ${rawDownloadUrl}`)
+  }
 }
 
 async function authorizeB2Account(): Promise<B2AuthResponse> {
@@ -85,44 +101,92 @@ async function getFileInfo(
   return response.json() as Promise<{ fileName: string; bucketId: string }>
 }
 
-export async function getBackblazeSignedUrl(rawUrl: string, bucketId: string): Promise<string> {
+function buildAuthorizedDownloadUrl(
+  fileName: string,
+  downloadToken: string,
+  env: Pick<Env, 'B2_DOWNLOAD_URL'>,
+) {
+  const { downloadUrl } = getValidatedB2BaseUrls(env)
+  return `${downloadUrl}/file/chronex/${fileName}?Authorization=${encodeURIComponent(downloadToken)}`
+}
+
+async function getBackblazeDownloadAuthorization(bucketId: string, fileName: string) {
+  const authData = await authorizeB2Account()
+  const { authorizationToken, apiInfo } = authData
+  const apiUrl = apiInfo.storageApi.apiUrl
+
+  const { authorizationToken: downloadToken } = await getDownloadAuthorization(
+    authorizationToken,
+    apiUrl,
+    bucketId,
+    fileName,
+  )
+
+  return downloadToken
+}
+
+export async function getBackblazeSignedUrlForFileName(
+  fileName: string,
+  bucketId: string,
+  env: Pick<Env, 'B2_DOWNLOAD_URL'>,
+): Promise<{ url: string; downloadToken: string }> {
+  try {
+    const downloadToken = await getBackblazeDownloadAuthorization(bucketId, fileName)
+    return {
+      url: buildAuthorizedDownloadUrl(fileName, downloadToken, env),
+      downloadToken,
+    }
+  } catch (error) {
+    throw new Error(`Error generating Backblaze signed URL: ${error}`)
+  }
+}
+
+function extractBackblazeFileName(rawUrl: string): string | null {
+  if (!rawUrl?.trim()) {
+    return null
+  }
+
+  try {
+    const url = new URL(rawUrl)
+
+    if (url.pathname.includes('b2_download_file_by_id') || url.searchParams.has('fileId')) {
+      return null
+    }
+
+    const pathMatch = url.pathname.match(/^\/file\/[^/]+\/(.+)$/)
+    if (pathMatch?.[1]) {
+      return decodeURIComponent(pathMatch[1])
+    }
+
+    const pathname = url.pathname.replace(/^\/+/, '')
+    return pathname ? decodeURIComponent(pathname) : null
+  } catch {
+    return null
+  }
+}
+
+export async function getBackblazeSignedUrl(
+  rawUrl: string,
+  bucketId: string,
+  env: Pick<Env, 'B2_DOWNLOAD_URL'>,
+): Promise<{ url: string; downloadToken: string }> {
   try {
     const authData = await authorizeB2Account()
     const { authorizationToken, apiInfo } = authData
-    const downloadUrl = apiInfo.storageApi.downloadUrl
     const apiUrl = apiInfo.storageApi.apiUrl
-    const bucketName = 'chronex'
+    let fileName = extractBackblazeFileName(rawUrl)
 
-    const url = new URL(rawUrl)
-    let fileName: string
-
-    // Detect URL format: fileId-based vs friendly URL
-    if (url.pathname.includes('b2_download_file_by_id') || url.searchParams.has('fileId')) {
-      // fileId-based URL: e.g. .../b2api/v3/b2_download_file_by_id?fileId=XXXX
+    if (!fileName) {
+      const url = new URL(rawUrl)
       const fileId = url.searchParams.get('fileId')
       if (!fileId) {
         throw new Error('fileId parameter missing from URL')
       }
       const fileInfo = await getFileInfo(authorizationToken, apiUrl, fileId)
       fileName = fileInfo.fileName
-    } else {
-      // Friendly URL: e.g. .../file/bucket-name/path/to/file.jpg
-      const pathMatch = url.pathname.match(/^\/file\/[^/]+\/(.+)$/)
-      if (pathMatch) {
-        fileName = pathMatch[1]
-      } else {
-        fileName = url.pathname.replace(/^\//, '')
-      }
     }
 
-    const { authorizationToken: downloadToken } = await getDownloadAuthorization(
-      authorizationToken,
-      apiUrl,
-      bucketId,
-      fileName,
-    )
-
-    return `${downloadUrl}/file/${bucketName}/${fileName}?Authorization=${encodeURIComponent(downloadToken)}`
+    return getBackblazeSignedUrlForFileName(fileName, bucketId, env)
   } catch (error) {
     throw new Error(`Error generating Backblaze signed URL: ${error}`)
   }

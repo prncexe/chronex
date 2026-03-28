@@ -3,7 +3,7 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
 export const getChannels = workspaceProcedure
-  .input(z.object({ platform: z.enum(['slack', 'discord']) }))
+  .input(z.object({ platform: z.enum(['slack', 'discord', 'telegram']) }))
   .query(async ({ ctx, input }) => {
     try {
       const token = await ctx.db.query.authToken.findFirst({
@@ -57,6 +57,23 @@ export const getChannels = workspaceProcedure
             id: c.id,
             name: c.name,
           }))
+      }
+
+      if (input.platform === 'telegram') {
+        const channels = await ctx.db.query.telegramChannels.findMany({
+          where: (channel, { and, eq }) =>
+            and(eq(channel.workspaceId, ctx.workspaceId), eq(channel.isActive, true)),
+          columns: {
+            chatId: true,
+            title: true,
+          },
+          orderBy: (channel, { asc }) => [asc(channel.title)],
+        })
+
+        return channels.map((channel) => ({
+          id: channel.chatId,
+          name: channel.title,
+        }))
       }
 
       return []

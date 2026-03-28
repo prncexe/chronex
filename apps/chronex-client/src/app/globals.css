@@ -175,6 +175,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   html,
   body {
     font-family:
@@ -187,6 +188,29 @@
   html {
     @apply font-sans;
   }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+
+  html[data-theme-transition='dark']::view-transition-old(root) {
+    z-index: 0;
+  }
+
+  html[data-theme-transition='dark']::view-transition-new(root) {
+    z-index: 1;
+  }
+
+  html[data-theme-transition='light']::view-transition-old(root) {
+    z-index: 1;
+  }
+
+  html[data-theme-transition='light']::view-transition-new(root) {
+    z-index: 0;
+  }
+
   ::selection {
     @apply bg-primary/20 text-foreground;
   }
@@ -251,6 +275,12 @@
   .chronex-orb-b,
   .chronex-orb-c {
     animation: none;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }
 

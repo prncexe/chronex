@@ -1,4 +1,10 @@
-import { createPost, getUploadUrl, getUserPosts, saveMedia } from '../procedures/user/post'
+import {
+  createPost,
+  getUploadUrl,
+  getUserPostById,
+  getUserPosts,
+  saveMedia,
+} from '../procedures/user/post'
 import { createTRPCRouter } from '../trpc'
 
 export const postRouter = createTRPCRouter({
@@ -6,4 +12,5 @@ export const postRouter = createTRPCRouter({
   createPost: createPost,
   saveMedia: saveMedia,
   getUserPosts: getUserPosts,
+  getUserPostById: getUserPostById,
 })

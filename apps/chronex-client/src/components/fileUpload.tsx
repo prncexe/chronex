@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import { trpc } from '@/utils/trpc'
 import { Input } from './ui/input'
+import NextImage from 'next/image'
 // --- Types ---
 interface UploadedFile {
   id: string
@@ -66,11 +67,11 @@ function getFileIcon(type: string) {
 }
 
 function getFileColor(type: string): string {
-  if (type.startsWith('image/')) return 'text-violet-500'
-  if (type.startsWith('video/')) return 'text-rose-500'
-  if (type.startsWith('audio/')) return 'text-amber-500'
-  if (type.includes('pdf')) return 'text-red-500'
-  return 'text-blue-500'
+  if (type.startsWith('image/')) return 'text-muted-foreground'
+  if (type.startsWith('video/')) return 'text-muted-foreground'
+  if (type.startsWith('audio/')) return 'text-muted-foreground'
+  if (type.includes('pdf')) return 'text-muted-foreground'
+  return 'text-muted-foreground'
 }
 
 function getMediaDimensions(file: File): Promise<MediaDimensions> {
@@ -78,7 +79,7 @@ function getMediaDimensions(file: File): Promise<MediaDimensions> {
     const url = URL.createObjectURL(file)
 
     if (file.type.startsWith('image/')) {
-      const img = new Image()
+      const img = new window.Image()
       img.onload = () => {
         resolve({ width: img.naturalWidth, height: img.naturalHeight })
         URL.revokeObjectURL(url)
@@ -337,7 +338,7 @@ export default function FileUpload({
     <Card className={cn('w-full max-w-xl', className)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Upload className="size-5 text-primary" />
+          <Upload className="size-5 text-muted-foreground" />
           Upload Files
         </CardTitle>
         <CardDescription>
@@ -368,23 +369,23 @@ export default function FileUpload({
           className={cn(
             'group relative flex min-h-[180px] cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-8 text-center transition-all duration-300',
             isDragActive
-              ? 'border-primary bg-primary/5 shadow-[0_0_0_4px] shadow-primary/10'
-              : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50',
+              ? 'border-border bg-muted/60 shadow-[0_0_0_4px] shadow-black/5'
+              : 'border-border/60 hover:border-border hover:bg-muted/40',
             isUploading && 'pointer-events-none opacity-60',
           )}
         >
           <div
             className={cn(
               'flex size-14 items-center justify-center rounded-full bg-muted transition-all duration-300',
-              isDragActive && 'scale-110 bg-primary/10',
+              isDragActive && 'scale-110 bg-secondary',
             )}
           >
             <Upload
               className={cn(
                 'size-6 transition-all duration-300',
                 isDragActive
-                  ? '-translate-y-1 text-primary'
-                  : 'text-muted-foreground group-hover:-translate-y-0.5 group-hover:text-primary',
+                  ? '-translate-y-1 text-foreground'
+                  : 'text-muted-foreground group-hover:-translate-y-0.5 group-hover:text-foreground',
               )}
             />
           </div>
@@ -420,7 +421,9 @@ export default function FileUpload({
               <Button
                 type="button"
                 onClick={clearAll}
-                className="cursor-pointer text-xs text-muted transition-colors hover:bg-primary/80"
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground"
               >
                 Clear all
               </Button>
@@ -436,15 +439,20 @@ export default function FileUpload({
                     key={f.id}
                     className={cn(
                       'group/file relative flex items-center gap-3 rounded-lg border bg-card p-3 transition-all duration-200',
-                      f.status === 'error' && 'border-destructive/30 bg-destructive/5',
-                      f.status === 'success' && 'border-emerald-500/30 bg-emerald-500/5',
+                      f.status === 'error' && 'border-destructive/20 bg-destructive/5',
+                      f.status === 'success' && 'border-border bg-muted/20',
                     )}
                   >
                     {/* Preview / Icon */}
                     {f.preview ? (
                       <div className="relative size-10 shrink-0 overflow-hidden rounded-md">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={f.preview} alt={f.file.name} className="size-full object-cover" />
+                        <NextImage
+                          src={f.preview}
+                          alt={f.file.name}
+                          fill
+                          unoptimized
+                          className="object-cover"
+                        />
                       </div>
                     ) : (
                       <div
@@ -477,7 +485,7 @@ export default function FileUpload({
                           </span>
                         )}
                         {f.status === 'success' && (
-                          <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
                             <CheckCircle2 className="size-3" />
                             Uploaded
                           </span>
@@ -521,7 +529,7 @@ export default function FileUpload({
           <Button
             onClick={handleUpload}
             disabled={isUploading || pendingCount === 0}
-            className="flex-1 cursor-pointer hover:bg-primary/80"
+            className="flex-1 cursor-pointer"
           >
             {isUploading ? (
               <>

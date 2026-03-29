@@ -1,14 +1,12 @@
 'use client'
 
+import Link from 'next/link'
 import * as React from 'react'
 import { format } from 'date-fns'
-import { ChevronDown, ExternalLink, FileText, Layers3, Loader2, CalendarDays } from 'lucide-react'
+import { CalendarDays, ChevronRight, Loader2 } from 'lucide-react'
 import { trpc } from '@/utils/trpc'
-import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
   Pagination,
   PaginationContent,
@@ -17,8 +15,18 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
 
-const PAGE_SIZE = 5
+const DEFAULT_PAGE_SIZE = 10
+const PAGE_SIZE_OPTIONS = ['10', '15', '20'] as const
 
 function formatDate(value: Date | null) {
   if (!value) return 'Not scheduled'
@@ -32,199 +40,140 @@ function getStatusVariant(status: string): 'default' | 'secondary' | 'destructiv
   return 'outline'
 }
 
+function getPostSummary(post: { platformPosts: Array<{ metadata: unknown }> }) {
+  for (const platformPost of post.platformPosts) {
+    const metadata =
+      platformPost.metadata && typeof platformPost.metadata === 'object'
+        ? platformPost.metadata
+        : null
+
+    if (!metadata) continue
+
+    if ('caption' in metadata && typeof metadata.caption === 'string' && metadata.caption.trim()) {
+      return metadata.caption.trim()
+    }
+
+    if ('title' in metadata && typeof metadata.title === 'string' && metadata.title.trim()) {
+      return metadata.title.trim()
+    }
+  }
+
+  return null
+}
+
 export function UserPostsHistory() {
   const [page, setPage] = React.useState(1)
-  const [openPostId, setOpenPostId] = React.useState<number | null>(null)
+  const [pageSize, setPageSize] = React.useState(DEFAULT_PAGE_SIZE)
 
   const { data, isLoading, isFetching } = trpc.post.getUserPosts.useQuery({
     page,
-    pageSize: PAGE_SIZE,
+    pageSize,
   })
-
-  React.useEffect(() => {
-    setOpenPostId(null)
-  }, [page])
 
   const items = data?.items ?? []
 
   return (
     <Card>
-      <CardHeader className="space-y-2">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <CardTitle>Recent Posts</CardTitle>
+      <CardHeader className="flex flex-col gap-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <CardTitle>Posts</CardTitle>
             <CardDescription>
-              Expand a post to inspect platform-specific status and payload details.
+              Simple list view. Open any post to see the full details.
             </CardDescription>
           </div>
           {isFetching && !isLoading ? (
-            <Loader2 className="size-4 animate-spin text-muted-foreground" />
+            <Loader2 className="animate-spin text-muted-foreground" />
+          ) : null}
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>Show</span>
+            <Select
+              value={String(pageSize)}
+              onValueChange={(value) => {
+                setPage(1)
+                setPageSize(Number(value))
+              }}
+            >
+              <SelectTrigger className="w-20">
+                <SelectValue placeholder="10" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {PAGE_SIZE_OPTIONS.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {data ? (
+            <p className="text-sm text-muted-foreground">
+              {(data.page - 1) * data.pageSize + 1}-
+              {Math.min(data.page * data.pageSize, data.totalItems)} of {data.totalItems}
+            </p>
           ) : null}
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+
+      <CardContent className="flex flex-col gap-2">
         {isLoading ? (
-          <div className="flex items-center justify-center py-10 text-sm text-muted-foreground">
-            <Loader2 className="mr-2 size-4 animate-spin" />
+          <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
+            <Loader2 className="animate-spin" />
             Loading posts...
           </div>
         ) : items.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border/70 px-4 py-10 text-center text-sm text-muted-foreground">
+          <div className="rounded-xl border border-dashed px-4 py-12 text-center text-sm text-muted-foreground">
             No posts created yet.
           </div>
         ) : (
-          <div className="space-y-3">
-            {items.map((post) => {
-              const isOpen = openPostId === post.id
+          <div className="rounded-xl border">
+            {items.map((post, index) => {
+              const summary = getPostSummary(post)
+
               return (
-                <Collapsible
-                  key={post.id}
-                  open={isOpen}
-                  onOpenChange={(open) => setOpenPostId(open ? post.id : null)}
-                >
-                  <div className="overflow-hidden rounded-xl border border-border/70 bg-card">
-                    <CollapsibleTrigger asChild>
-                      <button
-                        type="button"
-                        className="flex w-full cursor-pointer items-center justify-between gap-4 px-4 py-4 text-left transition-colors hover:bg-accent/30"
-                      >
-                        <div className="min-w-0 space-y-2">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="truncate text-sm font-semibold text-foreground">
-                              {post.refName}
-                            </p>
-                            <Badge variant={getStatusVariant(post.status)} className="capitalize">
-                              {post.status}
-                            </Badge>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                            <span className="inline-flex items-center gap-1">
-                              <CalendarDays className="size-3.5" />
-                              {formatDate(post.scheduledAt)}
-                            </span>
-                            <span className="inline-flex items-center gap-1">
-                              <Layers3 className="size-3.5" />
-                              {post.platformCount} platform{post.platformCount === 1 ? '' : 's'}
-                            </span>
-                            <span className="inline-flex items-center gap-1">
-                              <FileText className="size-3.5" />
-                              {post.mediaCount} media item{post.mediaCount === 1 ? '' : 's'}
-                            </span>
-                          </div>
-                        </div>
-                        <ChevronDown
-                          className={cn(
-                            'size-4 shrink-0 text-muted-foreground transition-transform',
-                            isOpen && 'rotate-180',
-                          )}
-                        />
-                      </button>
-                    </CollapsibleTrigger>
-
-                    <CollapsibleContent className="border-t border-border/60 bg-accent/15 px-4 py-4">
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <div className="space-y-2">
-                          <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                            Overview
-                          </p>
-                          <div className="space-y-2 rounded-lg border bg-background p-3 text-sm">
-                            <div className="flex items-center justify-between gap-3">
-                              <span className="text-muted-foreground">Created</span>
-                              <span>{formatDate(post.createdAt)}</span>
-                            </div>
-                            <div className="flex items-center justify-between gap-3">
-                              <span className="text-muted-foreground">Updated</span>
-                              <span>{formatDate(post.updatedAt)}</span>
-                            </div>
-                            <div className="flex items-center justify-between gap-3">
-                              <span className="text-muted-foreground">Platforms</span>
-                              <span className="text-right capitalize">
-                                {post.platforms.join(', ')}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                            Platform Details
-                          </p>
-                          <div className="space-y-2">
-                            {post.platformPosts.map((platformPost) => {
-                              const metadata =
-                                platformPost.metadata && typeof platformPost.metadata === 'object'
-                                  ? platformPost.metadata
-                                  : null
-                              const caption =
-                                metadata &&
-                                'caption' in metadata &&
-                                typeof metadata.caption === 'string'
-                                  ? metadata.caption
-                                  : null
-                              const type =
-                                metadata && 'type' in metadata && typeof metadata.type === 'string'
-                                  ? metadata.type
-                                  : null
-
-                              return (
-                                <div
-                                  key={platformPost.id}
-                                  className="space-y-2 rounded-lg border bg-background p-3"
-                                >
-                                  <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <div className="flex items-center gap-2">
-                                      <p className="text-sm font-medium capitalize">
-                                        {platformPost.platform}
-                                      </p>
-                                      <Badge
-                                        variant={getStatusVariant(platformPost.status)}
-                                        className="capitalize"
-                                      >
-                                        {platformPost.status}
-                                      </Badge>
-                                    </div>
-                                    {platformPost.postUrl ? (
-                                      <a
-                                        href={platformPost.postUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                                      >
-                                        Open post <ExternalLink className="size-3" />
-                                      </a>
-                                    ) : null}
-                                  </div>
-                                  <div className="space-y-1 text-xs text-muted-foreground">
-                                    <p>Type: {type ?? 'Not available'}</p>
-                                    <p>Scheduled: {formatDate(platformPost.scheduledAt)}</p>
-                                    <p>Published: {formatDate(platformPost.publishedAt)}</p>
-                                    {platformPost.errorMessage ? (
-                                      <p className="text-destructive">
-                                        Error: {platformPost.errorMessage}
-                                      </p>
-                                    ) : null}
-                                  </div>
-                                  {caption ? (
-                                    <div className="rounded-md bg-accent/40 p-2 text-xs text-foreground">
-                                      {caption}
-                                    </div>
-                                  ) : null}
-                                </div>
-                              )
-                            })}
-                          </div>
-                        </div>
+                <React.Fragment key={post.id}>
+                  <Link
+                    href={`/post/${post.id}`}
+                    className="flex flex-col gap-3 px-4 py-4 transition-colors hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="truncate font-medium">{post.refName}</p>
+                        <Badge variant={getStatusVariant(post.status)} className="capitalize">
+                          {post.status}
+                        </Badge>
                       </div>
-                    </CollapsibleContent>
-                  </div>
-                </Collapsible>
+                      <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                        <span className="inline-flex items-center gap-1">
+                          <CalendarDays className="size-4" />
+                          {formatDate(post.scheduledAt)}
+                        </span>
+                        <span>{post.platforms.join(', ')}</span>
+                        <span>{post.mediaCount} media</span>
+                      </div>
+                      {summary ? (
+                        <p className="mt-2 line-clamp-1 text-sm text-muted-foreground">{summary}</p>
+                      ) : null}
+                    </div>
+
+                    <ChevronRight className="shrink-0 text-muted-foreground" />
+                  </Link>
+
+                  {index < items.length - 1 ? <Separator /> : null}
+                </React.Fragment>
               )
             })}
           </div>
         )}
 
         {data && data.totalPages > 1 ? (
-          <Pagination>
+          <Pagination className="pt-4">
             <PaginationContent>
               <PaginationItem>
                 <PaginationPrevious
@@ -266,24 +215,6 @@ export function UserPostsHistory() {
               </PaginationItem>
             </PaginationContent>
           </Pagination>
-        ) : null}
-
-        {data ? (
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>
-              Showing {(data.page - 1) * data.pageSize + 1}-
-              {Math.min(data.page * data.pageSize, data.totalItems)} of {data.totalItems}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 cursor-pointer text-xs"
-              onClick={() => setPage(1)}
-              disabled={page === 1}
-            >
-              Back to first page
-            </Button>
-          </div>
         ) : null}
       </CardContent>
     </Card>

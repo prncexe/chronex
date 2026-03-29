@@ -260,3 +260,140 @@ export const getUserPosts = workspaceProcedure
       })
     }
   })
+
+export const getUserPostById = workspaceProcedure
+  .input(
+    z.object({
+      id: z.number().int().positive(),
+    }),
+  )
+  .query(async ({ ctx, input }) => {
+    try {
+      const postRecord = await ctx.db.query.post.findFirst({
+        where: (posts, { and, eq }) =>
+          and(
+            eq(posts.id, input.id),
+            eq(posts.workspaceId, ctx.workspaceId),
+            eq(posts.createdBy, ctx.user.id),
+          ),
+        with: {
+          platformPosts: {
+            columns: {
+              id: true,
+              platform: true,
+              status: true,
+              scheduledAt: true,
+              publishedAt: true,
+              postUrl: true,
+              errorMessage: true,
+              metadata: true,
+            },
+            orderBy: (platformPost, { asc }) => [asc(platformPost.platform)],
+          },
+        },
+        columns: {
+          id: true,
+          refName: true,
+          status: true,
+          platforms: true,
+          content: true,
+          scheduledAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      })
+
+      if (!postRecord) {
+        return null
+      }
+
+      const mediaRecords =
+        postRecord.content.length > 0
+          ? await ctx.db.query.postMedia.findMany({
+              where: (media, { and, eq, inArray }) =>
+                and(
+                  inArray(
+                    media.id,
+                    postRecord.content.map((value) => Number(value)).filter(Boolean),
+                  ),
+                  eq(media.workspaceId, ctx.workspaceId),
+                  eq(media.userId, ctx.user.id),
+                ),
+              columns: {
+                id: true,
+                name: true,
+                url: true,
+                type: true,
+                size: true,
+                width: true,
+                height: true,
+                duration: true,
+                extension: true,
+                aspectRatio: true,
+                createdAt: true,
+                expiresAt: true,
+                downloadToken: true,
+              },
+            })
+          : []
+
+      const authorizedMedia =
+        mediaRecords.length > 0
+          ? await (async () => {
+              await b2.authorize()
+
+              return Promise.all(
+                mediaRecords.map(async (mediaItem) => {
+                  const isTokenFresh =
+                    mediaItem.expiresAt && mediaItem.expiresAt > new Date(Date.now() + 60 * 1000)
+
+                  if (isTokenFresh && mediaItem.downloadToken) {
+                    return {
+                      ...mediaItem,
+                      url: `${process.env.B2_DOWNLOAD_URL}/file/chronex/${mediaItem.name}?Authorization=${mediaItem.downloadToken}`,
+                    }
+                  }
+
+                  const data = await b2.getDownloadAuthorization({
+                    bucketId: process.env.B2_BUCKET_ID!,
+                    fileNamePrefix: mediaItem.name,
+                    validDurationInSeconds: 60 * 60 * 24 * 7,
+                  })
+
+                  await ctx.db
+                    .update(postMedia)
+                    .set({
+                      expiresAt: new Date(Date.now() + 60 * 60 * 24 * 7 * 1000),
+                      downloadToken: data.data.authorizationToken,
+                    })
+                    .where(eq(postMedia.id, mediaItem.id))
+
+                  return {
+                    ...mediaItem,
+                    url: `${process.env.B2_DOWNLOAD_URL}/file/chronex/${mediaItem.name}?Authorization=${data.data.authorizationToken}`,
+                  }
+                }),
+              )
+            })()
+          : []
+
+      const mediaById = new Map(authorizedMedia.map((item) => [String(item.id), item]))
+      const orderedMedia = postRecord.content
+        .map((mediaId) => mediaById.get(String(mediaId)))
+        .filter((item): item is NonNullable<typeof item> => Boolean(item))
+
+      return {
+        ...postRecord,
+        media: orderedMedia,
+        mediaCount: orderedMedia.length,
+        platformCount: postRecord.platformPosts.length,
+      }
+    } catch (error) {
+      console.log('Error in getUserPostById:', error)
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to get post details',
+        cause: error,
+      })
+    }
+  })

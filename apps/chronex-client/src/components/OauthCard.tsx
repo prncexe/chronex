@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from './ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { connectMapper } from '@/lib/oauthMapper/connect'
 import { useDisconnectMapper } from '@/lib/oauthMapper/disconnect'
 import { PlatformId } from '@/config/platforms'
 import { Button } from './ui/button'
 import IconRenderer from '@/lib/logoMapping'
+import { AlertCircle, CheckCircle2, Clock3, Link2, UserRound } from 'lucide-react'
 
 function waitForPopupClose(popup: Window) {
   return new Promise<void>((resolve) => {
@@ -18,16 +19,21 @@ function waitForPopupClose(popup: Window) {
     }, 500)
   })
 }
+
 const OauthCard = ({
   platformname,
   isVerified,
   isPending = false,
   username,
+  expiryLabel,
+  expiryMeta,
 }: {
   platformname: PlatformId
   isVerified: boolean
   isPending?: boolean
   username: string
+  expiryLabel: string
+  expiryMeta?: string
 }) => {
   const [isLoading, setIsLoading] = useState(false)
   const disconnect = useDisconnectMapper()
@@ -38,7 +44,6 @@ const OauthCard = ({
     const popup = window.open(url, '', 'width=600,height=600,left=100,top=100')
     if (popup) {
       await waitForPopupClose(popup)
-
       console.log('Popup closed')
       setIsLoading(false)
       window.location.reload()
@@ -58,59 +63,119 @@ const OauthCard = ({
   }
 
   const displayName = username?.trim() || 'No account connected'
+  const buttonLabel = isLoading
+    ? 'Please wait...'
+    : isVerified
+      ? 'Disconnect'
+      : isPending
+        ? 'Finish setup'
+        : 'Connect'
 
   return (
-    <Card className="h-full rounded-xl border-border/70 transition-shadow hover:shadow-sm">
-      <CardHeader className="flex flex-col gap-4 pb-3">
-        <div className="flex items-center justify-between gap-3">
+    <Card className="flex h-full flex-col border-border/60 bg-card shadow-sm">
+      <CardHeader className="gap-4 pb-4">
+        <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex size-11 items-center justify-center rounded-xl border border-border/70 bg-background">
+            <div className="flex size-11 items-center justify-center rounded-xl border border-border/70 bg-muted/30">
               <IconRenderer name={platformname} />
             </div>
 
             <div className="min-w-0">
-              <CardTitle className="truncate text-base font-semibold capitalize">
+              <CardTitle className="truncate text-lg font-semibold capitalize">
                 {platformname}
               </CardTitle>
-              <CardDescription className="text-xs">
-                {isVerified ? 'Connected' : isPending ? 'Setup incomplete' : 'Not connected'}
+              <CardDescription>
+                {isVerified
+                  ? 'Connected and ready to use'
+                  : isPending
+                    ? 'Connection started, setup still incomplete'
+                    : 'Not connected yet'}
               </CardDescription>
             </div>
           </div>
 
-          <div
-            className={`rounded-full border px-2.5 py-1 text-xs font-medium ${
-              isVerified
-                ? 'border-primary/30 bg-primary/10 text-primary'
-                : isPending
-                  ? 'border-amber-300/40 bg-amber-500/10 text-amber-700 dark:text-amber-300'
-                  : 'bg-background'
-            }`}
-          >
-            {isVerified ? 'Active' : isPending ? 'Pending' : 'Idle'}
-          </div>
-        </div>
-
-        <div className="rounded-xl border bg-muted/40 px-3 py-2">
-          <p className="text-xs text-muted-foreground">Account</p>
-          <p className="truncate text-sm font-medium">{displayName}</p>
+          {isVerified ? (
+            <div className="inline-flex items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+              <CheckCircle2 className="size-3.5" />
+              Active
+            </div>
+          ) : isPending ? (
+            <div className="inline-flex items-center gap-1 rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-700 dark:text-amber-300">
+              <Clock3 className="size-3.5" />
+              Pending
+            </div>
+          ) : (
+            <div className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/30 px-2.5 py-1 text-xs font-medium text-muted-foreground">
+              <Link2 className="size-3.5" />
+              Available
+            </div>
+          )}
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0">
-        <Button
-          className="w-full cursor-pointer"
-          onClick={isVerified ? handleDisconnect : handleConnect}
-          disabled={isLoading}
-        >
-          {isLoading
-            ? 'Please wait...'
-            : isVerified
-              ? 'Disconnect'
-              : isPending
-                ? 'Finish setup'
-                : 'Connect'}
-        </Button>
+      <CardContent className="flex flex-1 flex-col gap-3 pt-0">
+        <div className="flex flex-col gap-3">
+          {isVerified && (
+            <>
+              <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
+                <p className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                  <UserRound className="size-3.5" />
+                  Connected account
+                </p>
+                <p className="text-sm font-medium text-foreground">{displayName}</p>
+              </div>
+
+              <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
+                <p className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                  <Clock3 className="size-3.5" />
+                  Token expiry
+                </p>
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="text-sm font-medium text-foreground">{expiryLabel}</p>
+                  {expiryMeta && (
+                    <p className="shrink-0 text-xs text-muted-foreground">{expiryMeta}</p>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {isPending && (
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/8 p-3">
+              <p className="mb-1 flex items-center gap-2 text-xs font-medium text-amber-700 dark:text-amber-300">
+                <AlertCircle className="size-3.5" />
+                Setup still needed
+              </p>
+              <p className="text-sm text-muted-foreground">
+                The token exists, but the platform is not fully usable yet. Finish the provider
+                setup to activate posting.
+              </p>
+            </div>
+          )}
+
+          {!isVerified && !isPending && (
+            <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 p-3">
+              <p className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                <Link2 className="size-3.5" />
+                Ready to connect
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Authorize this platform to let Chronex publish through your workspace.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-auto pt-1">
+          <Button
+            className="w-full cursor-pointer"
+            variant={isVerified ? 'outline' : 'default'}
+            onClick={isVerified ? handleDisconnect : handleConnect}
+            disabled={isLoading}
+          >
+            {buttonLabel}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   )

@@ -16,6 +16,31 @@ const ALL_PLATFORMS: PlatformId[] = [
   'telegram',
 ]
 
+function formatExpiryDate(value: Date | string | null | undefined) {
+  if (!value) return 'Does not expire'
+
+  return new Date(value).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
+function getExpiryMeta(value: Date | string | null | undefined) {
+  if (!value) return 'No expiry limit'
+
+  const expiry = new Date(value)
+  const diffMs = expiry.getTime() - Date.now()
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+
+  if (diffDays < 0) return 'Expired'
+  if (diffDays === 0) return 'Expires today'
+  if (diffDays === 1) return '1 day left'
+  return `${diffDays} days left`
+}
+
 export default function ConnectionsPage() {
   const { data: user, isLoading } = trpc.user.getUser.useQuery()
   const workspaces = user?.workspaces ?? []
@@ -42,38 +67,68 @@ export default function ConnectionsPage() {
   const pendingTelegram =
     authTokens.some((token) => (token.platform as PlatformId) === 'telegram') &&
     telegramChannelCount === 0
+
   const connectedCount = ALL_PLATFORMS.filter((p) => connectedPlatforms.has(p)).length
+  const pendingCount = pendingTelegram ? 1 : 0
+  const availableCount = ALL_PLATFORMS.length - connectedCount - pendingCount
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
-      {}
-      <div className="mb-8 rounded-xl border border-border/70 bg-card px-5 py-4">
-        <div className="mb-1 flex items-center gap-2">
-          <ShieldCheck className="size-5 text-primary" />
-          <span className="text-sm font-medium tracking-wide text-muted-foreground uppercase">
-            Connections
-          </span>
+      <section className="mb-8 rounded-2xl border border-border/60 bg-card px-6 py-5">
+        <div className="mb-2 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <ShieldCheck className="size-4 text-primary" />
+          Tokens
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight">Connected Platforms</h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          {connectedCount} of {ALL_PLATFORMS.length} platforms connected
+        <h1 className="text-2xl font-semibold tracking-tight">Connected platforms</h1>
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+          Manage your platform connections. Tokens are scoped to this workspace and used when
+          publishing posts.
         </p>
-      </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="mt-5 flex flex-wrap gap-2 text-sm">
+          <div className="rounded-full border border-border bg-muted/30 px-3 py-1.5">
+            {connectedCount} connected
+          </div>
+          <div className="rounded-full border border-border bg-muted/30 px-3 py-1.5">
+            {pendingCount} pending
+          </div>
+          <div className="rounded-full border border-border bg-muted/30 px-3 py-1.5">
+            {availableCount} available
+          </div>
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {ALL_PLATFORMS.map((platform) => {
           const token = authTokens.find((token) => (token.platform as PlatformId) === platform)
+          const isVerified = connectedPlatforms.has(platform)
+          const isPending = platform === 'telegram' && pendingTelegram
+
+          const expiryLabel = isVerified
+            ? formatExpiryDate(token?.expiresAt)
+            : isPending
+              ? 'Awaiting channel setup'
+              : 'Connect to view expiry'
+
+          const expiryMeta = isVerified
+            ? getExpiryMeta(token?.expiresAt)
+            : isPending
+              ? 'Token saved — no channels yet'
+              : 'Not connected yet'
+
           return (
             <OauthCard
               key={platform}
               platformname={platform}
-              isVerified={connectedPlatforms.has(platform)}
-              isPending={platform === 'telegram' && pendingTelegram}
+              isVerified={isVerified}
+              isPending={isPending}
               username={token?.profileName ?? ''}
+              expiryLabel={expiryLabel}
+              expiryMeta={expiryMeta}
             />
           )
         })}
-      </div>
+      </section>
     </div>
   )
 }

@@ -14,6 +14,7 @@ export const getUser = workspaceProcedure.query(async ({ ctx }) => {
             id: true,
             platform: true,
             profileName: true,
+            expiresAt: true,
           },
         },
         workspaces: {

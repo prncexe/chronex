@@ -35,8 +35,21 @@ function getValidatedB2DownloadUrl(): string {
   }
 }
 
-export const getUploadUrl = workspaceProcedure.query(async () => {
+export const getUploadUrl = workspaceProcedure.query(async ({ ctx }) => {
   try {
+    const media = await ctx.db.query.postMedia.findMany({
+      where: (media, { eq }) => eq(media.workspaceId, ctx.workspaceId),
+      columns: {
+        id: true,
+      },
+    })
+    const mediaCount = media.length
+    if (mediaCount >= Number(process.env.NEXT_PUBLIC_MAX_MEDIA_PER_WORKSPACE)) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: `Media limit of ${process.env.NEXT_PUBLIC_MAX_MEDIA_PER_WORKSPACE} per workspace exceeded`,
+      })
+    }
     await b2.authorize()
     const res = await b2.getUploadUrl({
       bucketId: process.env.B2_BUCKET_ID!,
@@ -98,12 +111,17 @@ export const saveMedia = workspaceProcedure
 
 export const createPost = workspaceProcedure.input(InputSchema).mutation(async ({ ctx, input }) => {
   try {
-    const nowMs = Date.now()
-    const scheduledMs = input.scheduledAt.getTime()
-    if (scheduledMs < nowMs - 60_000) {
+    const posts = await ctx.db.query.post.findMany({
+      where: (post, { eq }) => eq(post.workspaceId, ctx.workspaceId),
+      columns: {
+        id: true,
+      },
+    })
+    const postCount = posts.length
+    if (postCount >= Number(process.env.NEXT_PUBLIC_MAX_POSTS_PER_WORKSPACE)) {
       throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: 'Scheduled time cannot be more than 1 minute in the past',
+        code: 'FORBIDDEN',
+        message: `Post limit of ${process.env.NEXT_PUBLIC_MAX_POSTS_PER_WORKSPACE} per workspace exceeded`,
       })
     }
 
@@ -151,7 +169,7 @@ export const createPost = workspaceProcedure.input(InputSchema).mutation(async (
       .values(platformEntries)
       .returning({ id: platformPosts.id, platform: platformPosts.platform })
 
-    const msUntilScheduled = scheduledMs - nowMs
+    const msUntilScheduled = input.scheduledAt.getTime() - Date.now()
     const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000
     console.log(insertedPlatformPosts)
     if (msUntilScheduled < TWELVE_HOURS_MS) {

@@ -28,6 +28,9 @@ import { trpc } from '@/utils/trpc'
 import { Input } from './ui/input'
 import { Button } from './ui/button'
 import { ChevronsUpDown, Plus, Briefcase } from 'lucide-react'
+import { toast } from 'sonner'
+import { getErrorMessage } from '@/lib/client-errors'
+import { CLIENT_LIMITS } from '@/lib/client-limits'
 
 function getClientCookie(name: string) {
   if (typeof document === 'undefined') return null
@@ -45,7 +48,7 @@ function setClientCookie(name: string, value: string) {
 export default function Workspace() {
   const { isMobile } = useSidebar()
 
-  const { data: workspaces, isLoading } = trpc.workspace.getWorkspaces.useQuery()
+  const { data: workspaces, isLoading, error } = trpc.workspace.getWorkspaces.useQuery()
   const createWorkspace = trpc.workspace.createWorkspace.useMutation()
 
   const [activeWorkspaceId, setActiveWorkspaceId] = React.useState<string | null>(null)
@@ -76,6 +79,15 @@ export default function Workspace() {
     }
   }, [isLoading, workspaces])
 
+  React.useEffect(() => {
+    if (error) {
+      toast.error(getErrorMessage(error, 'Failed to load workspaces'))
+    }
+  }, [error])
+
+  const workspaceCount = workspaces?.length ?? 0
+  const hasReachedWorkspaceLimit = workspaceCount >= CLIENT_LIMITS.maxWorkspaces
+
   const activeWorkspace = workspaces?.find((w) => String(w.id) === activeWorkspaceId)
 
   const handleSelectWorkspace = (id: string) => {
@@ -94,6 +106,10 @@ export default function Workspace() {
   const handleCreate = async () => {
     try {
       if (!name.trim()) return
+      if (hasReachedWorkspaceLimit) {
+        toast.error(`Workspace limit reached (${CLIENT_LIMITS.maxWorkspaces} max)`)
+        return
+      }
       const wpdata = await createWorkspace.mutateAsync({ name: name.trim() })
       const newId = String(wpdata.id)
       localStorage.setItem('workspaceId', newId)
@@ -104,6 +120,7 @@ export default function Workspace() {
       window.location.reload()
     } catch (err) {
       console.error(err)
+      toast.error(getErrorMessage(err, 'Failed to create workspace'))
     }
   }
 
@@ -165,13 +182,19 @@ export default function Workspace() {
                 className="cursor-pointer gap-2 p-2"
                 onClick={(e) => {
                   e.preventDefault()
+                  if (hasReachedWorkspaceLimit) {
+                    toast.error(`Workspace limit reached (${CLIENT_LIMITS.maxWorkspaces} max)`)
+                    return
+                  }
                   setOpen(true)
                 }}
               >
                 <div className="flex size-6 items-center justify-center rounded-md border bg-background">
                   <Plus className="size-4" />
                 </div>
-                <div className="font-medium text-muted-foreground">Create workspace</div>
+                <div className="font-medium text-muted-foreground">
+                  {hasReachedWorkspaceLimit ? 'Workspace limit reached' : 'Create workspace'}
+                </div>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -197,7 +220,7 @@ export default function Workspace() {
               placeholder="e.g. My Startup"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              disabled={createWorkspace.isPending}
+              disabled={createWorkspace.isPending || hasReachedWorkspaceLimit}
             />
 
             <AlertDialogFooter>
@@ -209,7 +232,10 @@ export default function Workspace() {
                 Cancel
               </AlertDialogCancel>
 
-              <Button type="submit" disabled={createWorkspace.isPending || !name.trim()}>
+              <Button
+                type="submit"
+                disabled={createWorkspace.isPending || !name.trim() || hasReachedWorkspaceLimit}
+              >
                 {createWorkspace.isPending ? 'Creating...' : 'Create'}
               </Button>
             </AlertDialogFooter>

@@ -24,6 +24,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { toast } from 'sonner'
+import { CLIENT_LIMITS } from '@/lib/client-limits'
 
 type MediaItem = {
   id: number
@@ -270,6 +272,16 @@ export default function MediaPage() {
     }
   }, [data])
 
+  const hasReachedMediaLimit = counts.all >= CLIENT_LIMITS.maxMediaPerWorkspace
+
+  const handleToggleUpload = () => {
+    if (!showUpload && hasReachedMediaLimit) {
+      toast.error(`Media limit reached (${CLIENT_LIMITS.maxMediaPerWorkspace} max per workspace)`)
+      return
+    }
+    setShowUpload((value) => !value)
+  }
+
   return (
     <>
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6">
@@ -292,14 +304,22 @@ export default function MediaPage() {
               </div>
             </div>
 
-            <Button onClick={() => setShowUpload((value) => !value)}>
+            <Button onClick={handleToggleUpload} disabled={hasReachedMediaLimit && !showUpload}>
               <Upload data-icon="inline-start" />
-              {showUpload ? 'Hide uploader' : 'Upload files'}
+              {showUpload
+                ? 'Hide uploader'
+                : hasReachedMediaLimit
+                  ? 'Media limit reached'
+                  : 'Upload files'}
             </Button>
           </CardHeader>
           {showUpload ? (
-            <CardContent>
-              <FileUpload />
+            <CardContent className="flex justify-center pt-0">
+              <FileUpload
+                maxSizeMB={CLIENT_LIMITS.maxUploadSizeMB}
+                currentWorkspaceMediaCount={counts.all}
+                maxWorkspaceMediaCount={CLIENT_LIMITS.maxMediaPerWorkspace}
+              />
             </CardContent>
           ) : null}
         </Card>

@@ -7,6 +7,8 @@ import { useEffect, useTransition } from 'react'
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 import { LogOut, ArrowLeft } from 'lucide-react'
+import { getErrorMessage } from '@/lib/client-errors'
+
 export default function LogoutPage() {
   const router = useRouter()
   const { data: session, isPending } = authClient.useSession()
@@ -27,7 +29,7 @@ export default function LogoutPage() {
         router.replace('/login')
       } catch (err) {
         console.error(err)
-        toast.error('Logout failed')
+        toast.error(getErrorMessage(err, 'Logout failed'))
       } finally {
         localStorage.removeItem('workspaceId')
         document.cookie = 'workspaceId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;'

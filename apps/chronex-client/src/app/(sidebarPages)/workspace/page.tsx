@@ -22,30 +22,48 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { MoreHorizontal, Trash2, Edit2, Search, Plus, LayoutGrid } from 'lucide-react'
+import { toast } from 'sonner'
+import { getErrorMessage } from '@/lib/client-errors'
+import { CLIENT_LIMITS } from '@/lib/client-limits'
 
 const Page = () => {
   const trpcContext = trpc.useUtils()
-  const { data: workspaces, isLoading } = trpc.workspace.getWorkspaces.useQuery()
+  const { data: workspaces, isLoading, error } = trpc.workspace.getWorkspaces.useQuery()
 
   const createWorkspace = trpc.workspace.createWorkspace.useMutation({
     onSuccess: () => {
+      toast.success('Workspace created')
       trpcContext.workspace.getWorkspaces.invalidate()
       setCreateDialogOpen(false)
       setNewName('')
+    },
+    onError: (error) => {
+      console.error('Failed to create workspace:', error)
+      toast.error(getErrorMessage(error, 'Failed to create workspace'))
     },
   })
 
   const deleteWorkspace = trpc.workspace.deleteWorkspace.useMutation({
     onSuccess: () => {
+      toast.success('Workspace deleted')
       trpcContext.workspace.getWorkspaces.invalidate()
       setDeleteConfirmId(null)
+    },
+    onError: (error) => {
+      console.error('Failed to delete workspace:', error)
+      toast.error(getErrorMessage(error, 'Failed to delete workspace'))
     },
   })
 
   const updateWorkspace = trpc.workspace.updateWorkspace.useMutation({
     onSuccess: () => {
+      toast.success('Workspace updated')
       trpcContext.workspace.getWorkspaces.invalidate()
       setEditingId(null)
+    },
+    onError: (error) => {
+      console.error('Failed to update workspace:', error)
+      toast.error(getErrorMessage(error, 'Failed to update workspace'))
     },
   })
 
@@ -69,13 +87,43 @@ const Page = () => {
   const filteredWorkspaces = workspaces?.filter((w) =>
     w.name.toLowerCase().includes(search.toLowerCase()),
   )
+  const workspaceCount = workspaces?.length ?? 0
+  const hasReachedWorkspaceLimit = workspaceCount >= CLIENT_LIMITS.maxWorkspaces
+
+  const handleOpenCreateDialog = () => {
+    if (hasReachedWorkspaceLimit) {
+      toast.error(`Workspace limit reached (${CLIENT_LIMITS.maxWorkspaces} max)`)
+      return
+    }
+    setCreateDialogOpen(true)
+  }
+
+  const handleCreateWorkspace = () => {
+    if (!newName.trim()) return
+    if (hasReachedWorkspaceLimit) {
+      toast.error(`Workspace limit reached (${CLIENT_LIMITS.maxWorkspaces} max)`)
+      return
+    }
+    createWorkspace.mutate({ name: newName.trim() })
+  }
+
+  React.useEffect(() => {
+    if (error) {
+      toast.error(getErrorMessage(error, 'Failed to load workspaces'))
+    }
+  }, [error])
 
   return (
     <div className="mx-auto min-h-full max-w-3xl space-y-6 p-8">
       {}
       <div className="flex items-center justify-between">
         <h1 className="text-sm font-medium text-foreground">Workspaces</h1>
-        <Button size="sm" variant="outline" onClick={() => setCreateDialogOpen(true)}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleOpenCreateDialog}
+          disabled={hasReachedWorkspaceLimit}
+        >
           <Plus className="mr-1.5 h-3.5 w-3.5" />
           New workspace
         </Button>
@@ -121,7 +169,12 @@ const Page = () => {
               <p className="text-sm text-foreground">No workspaces</p>
               <p className="mt-0.5 text-xs text-muted-foreground">Create one to get started.</p>
             </div>
-            <Button size="sm" variant="outline" onClick={() => setCreateDialogOpen(true)}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleOpenCreateDialog}
+              disabled={hasReachedWorkspaceLimit}
+            >
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               New workspace
             </Button>
@@ -218,6 +271,8 @@ const Page = () => {
         <p className="text-xs text-muted-foreground">
           {filteredWorkspaces?.length} of {workspaces?.length} workspace
           {workspaces?.length !== 1 ? 's' : ''}
+          {' · '}
+          limit {CLIENT_LIMITS.maxWorkspaces}
         </p>
       )}
 
@@ -253,7 +308,8 @@ const Page = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>New workspace</AlertDialogTitle>
             <AlertDialogDescription>
-              Give it a name. You can rename it later.
+              Give it a name. You can rename it later. {workspaceCount}/
+              {CLIENT_LIMITS.maxWorkspaces} used.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-2">
@@ -262,18 +318,17 @@ const Page = () => {
               onChange={(e) => setNewName(e.target.value)}
               placeholder="e.g. Acme Corp"
               autoFocus
-              disabled={createWorkspace.isPending}
+              disabled={createWorkspace.isPending || hasReachedWorkspaceLimit}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && newName.trim())
-                  createWorkspace.mutate({ name: newName.trim() })
+                if (e.key === 'Enter' && newName.trim()) handleCreateWorkspace()
               }}
             />
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={createWorkspace.isPending}>Cancel</AlertDialogCancel>
             <Button
-              onClick={() => createWorkspace.mutate({ name: newName.trim() })}
-              disabled={createWorkspace.isPending || !newName.trim()}
+              onClick={handleCreateWorkspace}
+              disabled={createWorkspace.isPending || !newName.trim() || hasReachedWorkspaceLimit}
             >
               {createWorkspace.isPending ? 'Creating…' : 'Create'}
             </Button>

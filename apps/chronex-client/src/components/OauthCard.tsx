@@ -8,6 +8,9 @@ import { PlatformId } from '@/config/platforms'
 import { Button } from './ui/button'
 import IconRenderer from '@/lib/logoMapping'
 import { AlertCircle, CheckCircle2, Clock3, Link2, UserRound } from 'lucide-react'
+import { toast } from 'sonner'
+import { getErrorMessage } from '@/lib/client-errors'
+import { cn } from '@/lib/utils'
 
 function waitForPopupClose(popup: Window) {
   return new Promise<void>((resolve) => {
@@ -24,6 +27,7 @@ const OauthCard = ({
   platformname,
   isVerified,
   isPending = false,
+  isBlocked = false,
   username,
   expiryLabel,
   expiryMeta,
@@ -31,6 +35,7 @@ const OauthCard = ({
   platformname: PlatformId
   isVerified: boolean
   isPending?: boolean
+  isBlocked?: boolean
   username: string
   expiryLabel: string
   expiryMeta?: string
@@ -40,13 +45,21 @@ const OauthCard = ({
 
   const handleConnect = async () => {
     setIsLoading(true)
-    const url = connectMapper[platformname]()
-    const popup = window.open(url, '', 'width=600,height=600,left=100,top=100')
-    if (popup) {
+    try {
+      const url = connectMapper[platformname]()
+      const popup = window.open(url, '', 'width=600,height=600,left=100,top=100')
+
+      if (!popup) {
+        throw new Error('Popup was blocked. Please allow popups and try again.')
+      }
+
       await waitForPopupClose(popup)
-      console.log('Popup closed')
-      setIsLoading(false)
       window.location.reload()
+    } catch (error) {
+      console.error(error)
+      toast.error(getErrorMessage(error, `Failed to connect ${platformname}`))
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -57,6 +70,9 @@ const OauthCard = ({
       if (res.success) {
         window.location.reload()
       }
+    } catch (error) {
+      console.error(error)
+      toast.error(getErrorMessage(error, `Failed to disconnect ${platformname}`))
     } finally {
       setIsLoading(false)
     }
@@ -65,11 +81,13 @@ const OauthCard = ({
   const displayName = username?.trim() || 'No account connected'
   const buttonLabel = isLoading
     ? 'Please wait...'
-    : isVerified
-      ? 'Disconnect'
-      : isPending
-        ? 'Finish setup'
-        : 'Connect'
+    : isBlocked
+      ? 'Not available'
+      : isVerified
+        ? 'Disconnect'
+        : isPending
+          ? 'Finish setup'
+          : 'Connect'
 
   return (
     <Card className="flex h-full flex-col border-border/60 bg-card shadow-sm">
@@ -85,16 +103,23 @@ const OauthCard = ({
                 {platformname}
               </CardTitle>
               <CardDescription>
-                {isVerified
-                  ? 'Connected and ready to use'
-                  : isPending
-                    ? 'Connection started, setup still incomplete'
-                    : 'Not connected yet'}
+                {isBlocked
+                  ? 'Unavailable on the hosted app'
+                  : isVerified
+                    ? 'Connected and ready to use'
+                    : isPending
+                      ? 'Connection started, setup still incomplete'
+                      : 'Not connected yet'}
               </CardDescription>
             </div>
           </div>
 
-          {isVerified ? (
+          {isBlocked ? (
+            <div className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs font-medium text-muted-foreground">
+              <AlertCircle className="size-3.5" />
+              Unavailable
+            </div>
+          ) : isVerified ? (
             <div className="inline-flex items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
               <CheckCircle2 className="size-3.5" />
               Active
@@ -115,7 +140,21 @@ const OauthCard = ({
 
       <CardContent className="flex flex-1 flex-col gap-3 pt-0">
         <div className="flex flex-col gap-3">
-          {isVerified && (
+          {isBlocked && (
+            <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
+              <p className="mb-1 flex items-center gap-2 text-xs font-medium text-foreground">
+                <AlertCircle className="size-3.5" />
+                Not available
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {platformname === 'instagram' || platformname === 'threads'
+                  ? `${platformname[0].toUpperCase()}${platformname.slice(1)} is not available here yet. Host yourself if you want to use your own reviewed app.`
+                  : `${platformname[0].toUpperCase()}${platformname.slice(1)} is not available here right now. Host yourself if you need it.`}
+              </p>
+            </div>
+          )}
+
+          {isVerified && !isBlocked && (
             <>
               <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
                 <p className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
@@ -140,7 +179,7 @@ const OauthCard = ({
             </>
           )}
 
-          {isPending && (
+          {isPending && !isBlocked && (
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/8 p-3">
               <p className="mb-1 flex items-center gap-2 text-xs font-medium text-amber-700 dark:text-amber-300">
                 <AlertCircle className="size-3.5" />
@@ -153,7 +192,7 @@ const OauthCard = ({
             </div>
           )}
 
-          {!isVerified && !isPending && (
+          {!isVerified && !isPending && !isBlocked && (
             <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 p-3">
               <p className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                 <Link2 className="size-3.5" />
@@ -168,10 +207,10 @@ const OauthCard = ({
 
         <div className="mt-auto pt-1">
           <Button
-            className="w-full cursor-pointer"
+            className={cn('w-full cursor-pointer', isBlocked && 'cursor-not-allowed')}
             variant={isVerified ? 'outline' : 'default'}
-            onClick={isVerified ? handleDisconnect : handleConnect}
-            disabled={isLoading}
+            onClick={isBlocked ? undefined : isVerified ? handleDisconnect : handleConnect}
+            disabled={isLoading || isBlocked}
           >
             {buttonLabel}
           </Button>

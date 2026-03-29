@@ -8,6 +8,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 import { Github } from 'lucide-react'
 import { FaGoogle } from 'react-icons/fa'
+import { getErrorMessage } from '@/lib/client-errors'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -29,9 +30,7 @@ export default function LoginPage() {
         })
       } catch (err) {
         console.error(err)
-        toast.error('Login failed')
-      } finally {
-        toast.success('Login successful, redirecting to dashboard')
+        toast.error(getErrorMessage(err, 'Login failed'))
       }
     })
   }

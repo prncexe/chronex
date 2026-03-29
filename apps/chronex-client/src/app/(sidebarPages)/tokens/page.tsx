@@ -16,6 +16,11 @@ const ALL_PLATFORMS: PlatformId[] = [
   'telegram',
 ]
 
+const platformBlacklist = (process.env.NEXT_PUBLIC_PLATFORM_BLACKLIST ?? '')
+  .split(',')
+  .map((platform) => platform.trim().toLowerCase())
+  .filter(Boolean)
+
 function formatExpiryDate(value: Date | string | null | undefined) {
   if (!value) return 'Does not expire'
 
@@ -61,16 +66,21 @@ export default function ConnectionsPage() {
 
   const connectedPlatforms = new Set(
     authTokens
+      .filter((token) => !platformBlacklist.includes(String(token.platform).toLowerCase()))
       .filter((token) => token.platform !== 'telegram' || telegramChannelCount > 0)
       .map((token) => token.platform as PlatformId),
   )
   const pendingTelegram =
+    !platformBlacklist.includes('telegram') &&
     authTokens.some((token) => (token.platform as PlatformId) === 'telegram') &&
     telegramChannelCount === 0
 
   const connectedCount = ALL_PLATFORMS.filter((p) => connectedPlatforms.has(p)).length
   const pendingCount = pendingTelegram ? 1 : 0
-  const availableCount = ALL_PLATFORMS.length - connectedCount - pendingCount
+  const availableCount =
+    ALL_PLATFORMS.filter((platform) => !platformBlacklist.includes(platform)).length -
+    connectedCount -
+    pendingCount
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
@@ -101,20 +111,25 @@ export default function ConnectionsPage() {
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {ALL_PLATFORMS.map((platform) => {
           const token = authTokens.find((token) => (token.platform as PlatformId) === platform)
+          const isBlocked = platformBlacklist.includes(platform)
           const isVerified = connectedPlatforms.has(platform)
           const isPending = platform === 'telegram' && pendingTelegram
 
-          const expiryLabel = isVerified
-            ? formatExpiryDate(token?.expiresAt)
-            : isPending
-              ? 'Awaiting channel setup'
-              : 'Connect to view expiry'
+          const expiryLabel = isBlocked
+            ? 'Hosted app restriction'
+            : isVerified
+              ? formatExpiryDate(token?.expiresAt)
+              : isPending
+                ? 'Awaiting channel setup'
+                : 'Connect to view expiry'
 
-          const expiryMeta = isVerified
-            ? getExpiryMeta(token?.expiresAt)
-            : isPending
-              ? 'Token saved — no channels yet'
-              : 'Not connected yet'
+          const expiryMeta = isBlocked
+            ? 'Self-host to enable this provider'
+            : isVerified
+              ? getExpiryMeta(token?.expiresAt)
+              : isPending
+                ? 'Token saved — no channels yet'
+                : 'Not connected yet'
 
           return (
             <OauthCard
@@ -122,6 +137,7 @@ export default function ConnectionsPage() {
               platformname={platform}
               isVerified={isVerified}
               isPending={isPending}
+              isBlocked={isBlocked}
               username={token?.profileName ?? ''}
               expiryLabel={expiryLabel}
               expiryMeta={expiryMeta}

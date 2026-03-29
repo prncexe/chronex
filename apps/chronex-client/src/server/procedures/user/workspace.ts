@@ -10,8 +10,16 @@ export const createWorkspaceProcedure = authProcedure
     }),
   )
   .mutation(async ({ ctx, input }) => {
-    const { name } = input
+    const maxWorkspaces = parseInt(process.env.NEXT_PUBLIC_MAX_WORKSPACE || '999', 10)
     const userId = ctx.user.id
+    const existingWorkspaces = await ctx.db.query.workspace.findMany({
+      where: (workspace, { eq }) => eq(workspace.createdBy, userId),
+    })
+    if (existingWorkspaces.length >= maxWorkspaces) {
+      throw new Error(`You can only create up to ${maxWorkspaces} workspaces.`)
+    }
+
+    const { name } = input
 
     const values: NewWorkspace = {
       name,

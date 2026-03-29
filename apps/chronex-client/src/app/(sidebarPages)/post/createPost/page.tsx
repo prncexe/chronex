@@ -12,6 +12,8 @@ import { PlatformSelectionCard } from './components/platform-selection-card'
 import { PlatformTabsSection } from './components/platform-tabs-section'
 import { PostDetailsCard } from './components/post-details-card'
 import type { PlatformFormData } from './types'
+import { getErrorMessage } from '@/lib/client-errors'
+import { CLIENT_LIMITS } from '@/lib/client-limits'
 import {
   buildPlatformDataPayload,
   combineDateAndTime,
@@ -20,12 +22,21 @@ import {
   validateCreatePostForm,
 } from './utils'
 
+const platformBlacklist = (process.env.NEXT_PUBLIC_PLATFORM_BLACKLIST ?? '')
+  .split(',')
+  .map((platform) => platform.trim().toLowerCase())
+  .filter(Boolean)
+
 export default function CreatePostForm() {
   const utils = trpc.useUtils()
   const router = useRouter()
 
   const { data: media, isLoading: mediaLoading } = trpc.user.getMedia.useQuery()
   const { data: userData, isLoading: userLoading } = trpc.user.getUser.useQuery()
+  const { data: postsSummary, isLoading: postsSummaryLoading } = trpc.post.getUserPosts.useQuery({
+    page: 1,
+    pageSize: 1,
+  })
   const createPost = trpc.post.createPost.useMutation()
 
   const [title, setTitle] = React.useState('')
@@ -61,6 +72,7 @@ export default function CreatePostForm() {
     if (!userData?.authTokens) return new Set<string>()
     return new Set(
       userData.authTokens
+        .filter((token) => !platformBlacklist.includes(String(token.platform).toLowerCase()))
         .filter(
           (token) => token.platform !== 'telegram' || (userData.telegramChannelCount ?? 0) > 0,
         )
@@ -123,7 +135,17 @@ export default function CreatePostForm() {
     [],
   )
 
+  const postCount = postsSummary?.totalItems ?? 0
+  const hasReachedPostLimit = postCount >= CLIENT_LIMITS.maxPostsPerWorkspace
+
   const handleSubmit = React.useCallback(async () => {
+    if (hasReachedPostLimit) {
+      const message = `Post limit reached (${CLIENT_LIMITS.maxPostsPerWorkspace} max per workspace)`
+      setErrors([message])
+      toast.error(message)
+      return
+    }
+
     const validationErrors = validateCreatePostForm({
       title,
       scheduledDate,
@@ -134,6 +156,7 @@ export default function CreatePostForm() {
 
     if (validationErrors.length > 0) {
       setErrors(validationErrors)
+      toast.error(validationErrors[0] ?? 'Please fix the form errors')
       return
     }
 
@@ -158,7 +181,9 @@ export default function CreatePostForm() {
       toast.success('Post created successfully')
       router.push('/post')
     } catch (error) {
-      setErrors([error instanceof Error ? error.message : 'Failed to create post'])
+      const message = getErrorMessage(error, 'Failed to create post')
+      setErrors([message])
+      toast.error(message)
     } finally {
       setIsSubmitting(false)
     }
@@ -171,6 +196,7 @@ export default function CreatePostForm() {
     selectedPlatforms,
     title,
     utils.post,
+    hasReachedPostLimit,
   ])
 
   const orderedPlatforms = React.useMemo(
@@ -221,7 +247,8 @@ export default function CreatePostForm() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground">Create Post</h1>
               <p className="text-sm text-muted-foreground">
-                Compose and schedule across all your platforms
+                Compose and schedule across all your platforms. {postCount}/
+                {CLIENT_LIMITS.maxPostsPerWorkspace} posts used.
               </p>
             </div>
           </div>
@@ -230,7 +257,12 @@ export default function CreatePostForm() {
             className="cursor-pointer gap-2 px-6 shadow-sm"
             size="lg"
             onClick={handleSubmit}
-            disabled={isSubmitting || selectedPlatforms.size === 0}
+            disabled={
+              isSubmitting ||
+              selectedPlatforms.size === 0 ||
+              hasReachedPostLimit ||
+              postsSummaryLoading
+            }
           >
             {isSubmitting ? (
               <>
@@ -258,6 +290,15 @@ export default function CreatePostForm() {
                   </li>
                 ))}
               </ul>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {hasReachedPostLimit && (
+          <Alert variant="destructive">
+            <AlertCircle className="size-4" />
+            <AlertDescription>
+              You have reached the workspace post limit of {CLIENT_LIMITS.maxPostsPerWorkspace}.
             </AlertDescription>
           </Alert>
         )}
@@ -313,7 +354,12 @@ export default function CreatePostForm() {
             className="cursor-pointer gap-2 px-6 shadow-sm"
             size="lg"
             onClick={handleSubmit}
-            disabled={isSubmitting || selectedPlatforms.size === 0}
+            disabled={
+              isSubmitting ||
+              selectedPlatforms.size === 0 ||
+              hasReachedPostLimit ||
+              postsSummaryLoading
+            }
           >
             {isSubmitting ? (
               <>

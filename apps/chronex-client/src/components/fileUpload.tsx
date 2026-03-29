@@ -26,6 +26,8 @@ import {
 import { trpc } from '@/utils/trpc'
 import { Input } from './ui/input'
 import NextImage from 'next/image'
+import { toast } from 'sonner'
+import { getErrorMessage } from '@/lib/client-errors'
 
 interface UploadedFile {
   id: string
@@ -38,8 +40,10 @@ interface UploadedFile {
 interface FileUploadProps {
   accept?: string
   multiple?: boolean
-  maxSizeMB?: number
+  maxSizeMB: number
   maxFiles?: number
+  currentWorkspaceMediaCount?: number
+  maxWorkspaceMediaCount?: number
   className?: string
 }
 
@@ -153,8 +157,10 @@ async function uploadFileToB2(
 export default function FileUpload({
   accept,
   multiple = true,
-  maxSizeMB = 50,
+  maxSizeMB,
   maxFiles = 10,
+  currentWorkspaceMediaCount = 0,
+  maxWorkspaceMediaCount,
   className,
 }: FileUploadProps) {
   const [files, setFiles] = React.useState<UploadedFile[]>([])
@@ -165,16 +171,35 @@ export default function FileUpload({
 
   const utils = trpc.useUtils()
   const saveMedia = trpc.post.saveMedia.useMutation()
+  const nonErrorFileCount = files.filter((file) => file.status !== 'error').length
+  const hasReachedWorkspaceMediaLimit =
+    maxWorkspaceMediaCount !== undefined && currentWorkspaceMediaCount >= maxWorkspaceMediaCount
+  const remainingWorkspaceSlots =
+    maxWorkspaceMediaCount === undefined
+      ? Infinity
+      : Math.max(0, maxWorkspaceMediaCount - currentWorkspaceMediaCount - nonErrorFileCount)
 
   const processFiles = React.useCallback(
     (incoming: FileList | File[]) => {
+      if (hasReachedWorkspaceMediaLimit) {
+        toast.error(`Media limit reached (${maxWorkspaceMediaCount} max per workspace)`)
+        return
+      }
+
       const newFiles: UploadedFile[] = []
       const fileArray = Array.from(incoming)
+      let rejectedCount = 0
+      let limitRejectedCount = 0
 
       for (const file of fileArray) {
         if (files.length + newFiles.length >= maxFiles) break
+        if (newFiles.length >= remainingWorkspaceSlots) {
+          limitRejectedCount++
+          continue
+        }
 
         if (file.size > maxSizeMB * 1024 * 1024) {
+          rejectedCount++
           newFiles.push({
             id: crypto.randomUUID(),
             file,
@@ -198,8 +223,31 @@ export default function FileUpload({
       }
 
       setFiles((prev) => [...prev, ...newFiles])
+
+      if (rejectedCount > 0) {
+        toast.error(
+          `${rejectedCount} file${rejectedCount > 1 ? 's' : ''} exceeded the ${maxSizeMB}MB limit`,
+        )
+      }
+
+      if (files.length + fileArray.length > maxFiles) {
+        toast.error(`You can upload up to ${maxFiles} files at a time`)
+      }
+
+      if (limitRejectedCount > 0 && maxWorkspaceMediaCount !== undefined) {
+        toast.error(
+          `${limitRejectedCount} file${limitRejectedCount > 1 ? 's were' : ' was'} skipped because your workspace media limit is ${maxWorkspaceMediaCount}`,
+        )
+      }
     },
-    [files.length, maxFiles, maxSizeMB],
+    [
+      files.length,
+      hasReachedWorkspaceMediaLimit,
+      maxFiles,
+      maxSizeMB,
+      maxWorkspaceMediaCount,
+      remainingWorkspaceSlots,
+    ],
   )
 
   const handleDragEnter = React.useCallback((e: React.DragEvent) => {
@@ -258,8 +306,14 @@ export default function FileUpload({
   const handleUpload = React.useCallback(async () => {
     const pendingFiles = files.filter((f) => f.status === 'pending')
     if (!pendingFiles.length) return
+    if (hasReachedWorkspaceMediaLimit) {
+      toast.error(`Media limit reached (${maxWorkspaceMediaCount} max per workspace)`)
+      return
+    }
 
     setIsUploading(true)
+    let successCount = 0
+    let failureCount = 0
 
     for (const pf of pendingFiles) {
       try {
@@ -286,11 +340,13 @@ export default function FileUpload({
           fileId: response.fileId,
         })
 
+        successCount++
         setFiles((prev) =>
           prev.map((f) => (f.id === pf.id ? { ...f, status: 'success' as const } : f)),
         )
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Upload failed'
+        failureCount++
+        const errorMessage = getErrorMessage(err, 'Upload failed')
         setFiles((prev) =>
           prev.map((f) =>
             f.id === pf.id ? { ...f, status: 'error' as const, error: errorMessage } : f,
@@ -300,7 +356,23 @@ export default function FileUpload({
     }
 
     setIsUploading(false)
-  }, [files, utils, saveMedia])
+
+    if (successCount > 0) {
+      toast.success(
+        `${successCount} file${successCount > 1 ? 's were' : ' was'} uploaded successfully`,
+      )
+    }
+
+    if (failureCount > 0) {
+      toast.error(
+        `${failureCount} file${failureCount > 1 ? 's' : ''} failed to upload. Check the file list for details.`,
+      )
+    }
+
+    if (successCount > 0) {
+      await utils.user.getMedia.invalidate()
+    }
+  }, [files, hasReachedWorkspaceMediaLimit, maxWorkspaceMediaCount, saveMedia, utils])
 
   const pendingCount = files.filter((f) => f.status === 'pending').length
   const hasFiles = files.length > 0
@@ -343,6 +415,7 @@ export default function FileUpload({
               ? 'border-border bg-muted/60 shadow-[0_0_0_4px] shadow-black/5'
               : 'border-border/60 hover:border-border hover:bg-muted/40',
             isUploading && 'pointer-events-none opacity-60',
+            hasReachedWorkspaceMediaLimit && 'pointer-events-none opacity-60',
           )}
         >
           <div
@@ -363,10 +436,18 @@ export default function FileUpload({
 
           <div className="space-y-1">
             <p className="text-sm font-medium text-foreground">
-              {isDragActive ? 'Drop files here' : 'Click to upload'}
+              {hasReachedWorkspaceMediaLimit
+                ? 'Media limit reached'
+                : isDragActive
+                  ? 'Drop files here'
+                  : 'Click to upload'}
             </p>
             <p className="text-xs text-muted-foreground">
-              {accept ? `Accepted: ${accept}` : 'SVG, PNG, JPG, GIF, PDF, MP4, and more'}
+              {hasReachedWorkspaceMediaLimit
+                ? `You already have ${currentWorkspaceMediaCount}/${maxWorkspaceMediaCount} media files in this workspace`
+                : accept
+                  ? `Accepted: ${accept}`
+                  : 'SVG, PNG, JPG, GIF, PDF, MP4, and more'}
             </p>
           </div>
 
@@ -379,6 +460,7 @@ export default function FileUpload({
             className="sr-only"
             aria-hidden="true"
             tabIndex={-1}
+            disabled={hasReachedWorkspaceMediaLimit}
           />
         </div>
 

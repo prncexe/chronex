@@ -109,6 +109,13 @@ export const PLATFORM_CONFIG: PlatformConfig[] = [
         minMedia: 1,
         maxMedia: 1,
       },
+      {
+        id: 'carousel',
+        label: 'Carousel',
+        requiresMedia: true,
+        minMedia: 1,
+        maxMedia: 10,
+      },
     ],
   },
   {

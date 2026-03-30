@@ -30,6 +30,7 @@ export function getAllowedMediaTypes(
     if (contentTypeId === 'text') return null
     if (contentTypeId === 'image') return ['image']
     if (contentTypeId === 'video') return ['video']
+    if (contentTypeId === 'carousel') return ['image', 'video']
   }
 
   if (platform === 'slack' || platform === 'discord') {

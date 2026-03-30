@@ -1,6 +1,6 @@
 'use client'
 
-import { useId } from 'react'
+import * as React from 'react'
 import { flushSync } from 'react-dom'
 import { LaptopIcon, MoonIcon, SunIcon } from 'lucide-react'
 import { useTheme } from 'next-themes'
@@ -34,9 +34,14 @@ type DocumentWithViewTransition = Document & {
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme()
-  const toggleId = useId()
+  const toggleRef = React.useRef<HTMLButtonElement>(null)
+  const [mounted, setMounted] = React.useState(false)
 
-  const activeTheme = theme ?? 'system'
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const activeTheme = mounted ? (theme ?? 'system') : 'system'
 
   const applyThemeToRoot = (nextMode: ThemeMode) => {
     const resolvedTheme =
@@ -59,9 +64,7 @@ export function ThemeToggle() {
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const transitionDocument = document as DocumentWithViewTransition
-    const toggleButton = document.querySelector<HTMLButtonElement>(
-      `[data-theme-toggle="${toggleId}"]`,
-    )
+    const toggleButton = toggleRef.current
 
     if (prefersReducedMotion || !transitionDocument.startViewTransition || !toggleButton) {
       setTheme(nextMode)
@@ -115,21 +118,27 @@ export function ThemeToggle() {
     })
   }
 
+  const triggerButton = (
+    <Button
+      ref={toggleRef}
+      variant="outline"
+      size="icon-sm"
+      className="relative"
+      aria-label="Toggle theme"
+    >
+      <SunIcon className="scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
+      <MoonIcon className="absolute scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
+      <span className="sr-only">Toggle theme</span>
+    </Button>
+  )
+
+  if (!mounted) {
+    return triggerButton
+  }
+
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon-sm"
-          className="relative"
-          aria-label="Toggle theme"
-          data-theme-toggle={toggleId}
-        >
-          <SunIcon className="scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
-          <MoonIcon className="absolute scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
-          <span className="sr-only">Toggle theme</span>
-        </Button>
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger asChild>{triggerButton}</DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Theme</DropdownMenuLabel>
         <DropdownMenuGroup>
